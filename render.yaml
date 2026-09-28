@@ -1,0 +1,72 @@
+services:
+  # ─── Laravel Web App ────────────────────────────────────────────────────────
+  - type: web
+    name: iappoint
+    runtime: php
+    region: singapore   # change to 'oregon', 'ohio', 'frankfurt' as needed
+    plan: free          # change to 'starter' for always-on
+    buildCommand: |
+      composer install --no-dev --optimize-autoloader
+      npm ci
+      npm run build
+      php artisan config:cache
+      php artisan route:cache
+      php artisan view:cache
+    startCommand: php artisan serve --host=0.0.0.0 --port=$PORT
+    healthCheckPath: /
+    envVars:
+      - key: APP_NAME
+        value: iAppoint
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+      - key: APP_KEY
+        generateValue: true   # Render auto-generates a secure key
+      - key: APP_URL
+        fromService:
+          type: web
+          name: iappoint
+          property: host
+      - key: DB_CONNECTION
+        value: mysql
+      - key: DB_HOST
+        fromDatabase:
+          name: iappoint-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: iappoint-db
+          property: port
+      - key: DB_DATABASE
+        fromDatabase:
+          name: iappoint-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: iappoint-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: iappoint-db
+          property: password
+      - key: SESSION_DRIVER
+        value: database
+      - key: QUEUE_CONNECTION
+        value: database
+      - key: CACHE_STORE
+        value: database
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: GOOGLE_CLIENT_ID
+        sync: false   # Set manually in Render dashboard
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false   # Set manually in Render dashboard
+
+  # ─── MySQL Database ──────────────────────────────────────────────────────────
+databases:
+  - name: iappoint-db
+    databaseName: iappoint
+    user: iappoint
+    region: singapore   # must match the web service region
+    plan: free          # free tier: 90-day expiry; upgrade for persistent data

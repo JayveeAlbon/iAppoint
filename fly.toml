@@ -1,0 +1,42 @@
+# fly.toml — Fly.io deployment config for iAppoint
+# Run `flyctl launch` to create the app, then `flyctl deploy` to deploy
+# Docs: https://fly.io/docs/reference/configuration/
+
+app = "iappoint"      # Change this to your unique Fly.io app name
+primary_region = "sin" # Singapore — change to: nrt (Tokyo), syd (Sydney), lax (LA), etc.
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  APP_NAME      = "iAppoint"
+  APP_ENV       = "production"
+  APP_DEBUG     = "false"
+  LOG_CHANNEL   = "stderr"
+  SESSION_DRIVER = "database"
+  QUEUE_CONNECTION = "database"
+  CACHE_STORE   = "database"
+
+[http_service]
+  internal_port       = 8080
+  force_https         = true
+  auto_stop_machines  = true
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type       = "connections"
+    hard_limit = 25
+    soft_limit = 20
+
+[[vm]]
+  memory     = "512mb"
+  cpu_kind   = "shared"
+  cpus       = 1
+
+[deploy]
+  release_command = "php artisan migrate --force"
+
+[[statics]]
+  guest_path = "/var/www/html/public"
+  url_prefix  = "/"
