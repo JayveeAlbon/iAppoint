@@ -1,9 +1,12 @@
 #!/bin/sh
 set -e
 
-echo "=== iAppoint Starting (Docker) ==="
+echo "=== iAppoint Starting (Docker/Render) ==="
+echo "DB_CONNECTION: $DB_CONNECTION"
+echo "DB_HOST: $DB_HOST"
+echo "APP_ENV: $APP_ENV"
 
-# Clear cached config (build-time cache has no real env vars)
+# Clear build-time cached config (was cached without real env vars)
 php /var/www/html/artisan config:clear
 php /var/www/html/artisan cache:clear
 
