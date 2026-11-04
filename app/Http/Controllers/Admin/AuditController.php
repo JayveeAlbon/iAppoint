@@ -38,7 +38,7 @@ class AuditController extends Controller
 
         $logs = $query->paginate(50)->withQueryString();
 
-        $eventGroups = AuditLog::selectRaw('SUBSTRING_INDEX(event, ".", 1) as grp')
+        $eventGroups = AuditLog::selectRaw("SPLIT_PART(event, '.', 1) as grp")
             ->distinct()
             ->orderBy('grp')
             ->pluck('grp');

@@ -16,7 +16,7 @@ class ScheduleController extends Controller
 
         $schedules = auth()->user()
             ->schedules()
-            ->orderByRaw("FIELD(day,'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday')")
+            ->orderByRaw("CASE day WHEN 'Monday' THEN 1 WHEN 'Tuesday' THEN 2 WHEN 'Wednesday' THEN 3 WHEN 'Thursday' THEN 4 WHEN 'Friday' THEN 5 WHEN 'Saturday' THEN 6 ELSE 7 END")
             ->orderBy('start_time')
             ->get();
 

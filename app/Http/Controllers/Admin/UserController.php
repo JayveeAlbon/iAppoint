@@ -23,7 +23,7 @@ class UserController extends Controller
 
         $query = User::withCount('schedules')
             ->with('facultyStatus')
-            ->orderByRaw("FIELD(status,'pending','active','suspended')")
+            ->orderByRaw("CASE status WHEN 'pending' THEN 1 WHEN 'active' THEN 2 WHEN 'suspended' THEN 3 ELSE 4 END")
             ->orderBy('name');
 
         if ($role = $request->input('role')) {
