@@ -27,7 +27,8 @@ RUN apk add --no-cache \
     unzip \
     oniguruma-dev \
     icu-dev \
-    mysql-client
+    mysql-client \
+    bash
 
 # Install PHP extensions
 RUN docker-php-ext-install \
@@ -71,7 +72,9 @@ RUN chown -R www-data:www-data /var/www/html \
 # Copy nginx and supervisor config
 COPY docker/nginx.conf /etc/nginx/http.d/default.conf
 COPY docker/supervisord.conf /etc/supervisord.conf
+COPY docker/start.sh /start.sh
+RUN chmod +x /start.sh
 
 EXPOSE 8080
 
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
+CMD ["/start.sh"]

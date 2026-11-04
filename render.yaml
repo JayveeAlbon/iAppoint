@@ -1,19 +1,10 @@
 services:
-  # ─── Laravel Web App ────────────────────────────────────────────────────────
   - type: web
     name: iappoint
-    runtime: php
-    region: singapore   # change to 'oregon', 'ohio', 'frankfurt' as needed
-    plan: free          # change to 'starter' for always-on
-    buildCommand: |
-      composer install --no-dev --optimize-autoloader
-      npm ci
-      npm run build
-      php artisan config:cache
-      php artisan route:cache
-      php artisan view:cache
-    startCommand: php artisan serve --host=0.0.0.0 --port=$PORT
-    healthCheckPath: /
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    region: singapore
+    plan: free
     envVars:
       - key: APP_NAME
         value: iAppoint
@@ -22,7 +13,7 @@ services:
       - key: APP_DEBUG
         value: false
       - key: APP_KEY
-        generateValue: true   # Render auto-generates a secure key
+        generateValue: true
       - key: APP_URL
         fromService:
           type: web
@@ -59,14 +50,13 @@ services:
       - key: LOG_CHANNEL
         value: stderr
       - key: GOOGLE_CLIENT_ID
-        sync: false   # Set manually in Render dashboard
+        sync: false
       - key: GOOGLE_CLIENT_SECRET
-        sync: false   # Set manually in Render dashboard
+        sync: false
 
-  # ─── MySQL Database ──────────────────────────────────────────────────────────
 databases:
   - name: iappoint-db
     databaseName: iappoint
     user: iappoint
-    region: singapore   # must match the web service region
-    plan: free          # free tier: 90-day expiry; upgrade for persistent data
+    region: singapore
+    plan: free
