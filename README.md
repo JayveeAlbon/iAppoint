@@ -15,6 +15,13 @@
   <img src="https://img.shields.io/badge/PHP-8.2+-purple?logo=php" alt="PHP 8.2" />
   <img src="https://img.shields.io/badge/Inertia.js-2.0-violet" alt="Inertia" />
   <img src="https://img.shields.io/badge/Tailwind_CSS-3-teal?logo=tailwindcss" alt="Tailwind" />
+  <img src="https://github.com/JayveeAlbon/iAppoint/actions/workflows/deploy.yml/badge.svg" alt="Deploy to Render" />
+</p>
+
+<p align="center">
+  <a href="https://render.com/deploy?repo=https://github.com/JayveeAlbon/iAppoint">
+    <img src="https://render.com/images/deploy-to-render-button.svg" alt="Deploy to Render" />
+  </a>
 </p>
 
 ---
@@ -45,6 +52,23 @@
 
 ---
 
+## Automatic Deployment (Render)
+
+Every push to `main` automatically deploys to Render via GitHub Actions.
+
+### One-time setup on Render
+
+1. Go to [render.com](https://render.com) → **New** → **Blueprint**
+2. Connect `JayveeAlbon/iAppoint` — Render reads `render.yaml` and creates the web service + MySQL database automatically
+3. In your Render web service → **Settings** → **Deploy Hook** — copy the URL
+4. In GitHub → **Settings** → **Secrets and variables** → **Actions** → add secret:
+   - Name: `RENDER_DEPLOY_HOOK_URL`
+   - Value: the deploy hook URL from Render
+
+After that, every `git push main` triggers an automatic deploy.
+
+---
+
 ## Local Development Setup
 
 ### Prerequisites
@@ -58,8 +82,8 @@
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/YOUR_USERNAME/iappoint.git
-cd iappoint
+git clone https://github.com/JayveeAlbon/iAppoint.git
+cd iAppoint
 
 # 2. Install PHP dependencies
 composer install
@@ -91,14 +115,13 @@ The app will be available at `http://localhost:8000`.
 
 1. Connect both computers to the same Wi-Fi or local network.
 2. On the computer running the app, run `ipconfig` and note its IPv4 address (for example, `192.168.1.25`).
-3. Set `APP_URL=http://192.168.1.25:8000` and `VITE_HMR_HOST=192.168.1.25` in `.env`, replacing the example with that computer's IPv4 address.
-4. Restart `composer run dev`, then open `http://192.168.1.25:8000` on the other laptop.
-5. If it still cannot connect, allow PHP/Node.js or TCP ports `8000` and `5173` through Windows Firewall for private networks. Some guest Wi-Fi networks also block connections between devices.
+3. Set `APP_URL=http://192.168.1.25:8000` and `VITE_HMR_HOST=192.168.1.25` in `.env`.
+4. Restart `composer run dev`, then open `http://192.168.1.25:8000` on the other device.
 
 ### Google OAuth Setup (optional)
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a project → Enable "Google+ API" or "Google Identity"
+2. Create a project → Enable "Google Identity"
 3. Create OAuth 2.0 credentials
 4. Add `http://localhost:8000/auth/google/callback` as an authorized redirect URI
 5. Copy `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` into your `.env`
@@ -121,7 +144,7 @@ Copy `.env.example` and fill in the values. Key variables for production:
 | Variable | Description |
 |---|---|
 | `APP_KEY` | Generated with `php artisan key:generate` |
-| `APP_URL` | Your public domain (e.g. `https://iappoint.up.railway.app`) |
+| `APP_URL` | Your public domain (e.g. `https://iappoint.onrender.com`) |
 | `APP_ENV` | Set to `production` |
 | `APP_DEBUG` | Set to `false` in production |
 | `DB_*` | Your MySQL database credentials |
