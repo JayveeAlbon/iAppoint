@@ -87,6 +87,14 @@ composer run dev
 
 The app will be available at `http://localhost:8000`.
 
+### Access from another laptop on your local network
+
+1. Connect both computers to the same Wi-Fi or local network.
+2. On the computer running the app, run `ipconfig` and note its IPv4 address (for example, `192.168.1.25`).
+3. Set `APP_URL=http://192.168.1.25:8000` and `VITE_HMR_HOST=192.168.1.25` in `.env`, replacing the example with that computer's IPv4 address.
+4. Restart `composer run dev`, then open `http://192.168.1.25:8000` on the other laptop.
+5. If it still cannot connect, allow PHP/Node.js or TCP ports `8000` and `5173` through Windows Firewall for private networks. Some guest Wi-Fi networks also block connections between devices.
+
 ### Google OAuth Setup (optional)
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)

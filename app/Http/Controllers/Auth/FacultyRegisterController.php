@@ -23,7 +23,8 @@ class FacultyRegisterController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'name'            => 'required|string|max:255',
+            'first_name'      => 'required|string|max:125',
+            'last_name'       => 'required|string|max:125',
             'email'           => 'required|string|lowercase|email|max:255|unique:'.User::class,
             'employee_id'     => 'required|string|max:50|unique:'.User::class,
             'department'      => 'required|string|max:255',
@@ -32,7 +33,7 @@ class FacultyRegisterController extends Controller
         ]);
 
         $user = User::create([
-            'name'            => $request->name,
+            'name'            => trim($request->first_name.' '.$request->last_name),
             'email'           => $request->email,
             'password'        => Hash::make($request->password),
             'role'            => 'faculty',

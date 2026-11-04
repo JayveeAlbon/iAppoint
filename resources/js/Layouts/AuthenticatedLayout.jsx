@@ -55,14 +55,6 @@ function IconUser() {
     );
 }
 
-function IconBarChart() {
-    return (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" />
-        </svg>
-    );
-}
-
 function IconFileText() {
     return (
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -247,8 +239,7 @@ function UserDropdown({ user }) {
     const adminItems = [
         { label: 'Users',        icon: <IconUsers />,    href: route('admin.users.index'),         active: route().current('admin.users.*') },
         { label: 'Appointments', icon: <IconCalendar />, href: route('admin.appointments.index'),  active: route().current('admin.appointments.*') },
-        { label: 'Reports',      icon: <IconBarChart />, href: route('admin.reports.index'),       active: route().current('admin.reports.*') },
-        { label: 'Audit Trail',  icon: <IconFileText />, href: route('admin.audit.index'),         active: route().current('admin.audit.*') },
+        { label: 'History',      icon: <IconFileText />, href: route('admin.audit.index'),         active: route().current('admin.audit.*') },
         { label: 'Settings',     icon: <IconSettings />, href: route('admin.settings.index'),      active: route().current('admin.settings.*') },
     ];
 
@@ -398,8 +389,7 @@ function Sidebar({ user, notifications }) {
                         <NavItem href={route('admin.users.index')}        icon={<IconUsers />}    label="Users"        active={route().current('admin.users.*')} />
                         <NavItem href={route('admin.appointments.index')} icon={<IconCalendar />} label="Appointments" badge={notifications?.pending_appointments ?? 0} active={route().current('admin.appointments.*')} />
                         <NavItem href={route('admin.feedback.index')}     icon={<IconMessage />}  label="Feedback"     badge={notifications?.pending_admin_feedback ?? 0} active={route().current('admin.feedback.*')} />
-                        <NavItem href={route('admin.reports.index')}      icon={<IconBarChart />} label="Reports"      active={route().current('admin.reports.*')} />
-                        <NavItem href={route('admin.audit.index')}        icon={<IconFileText />} label="Audit Trail"  active={route().current('admin.audit.*')} />
+                        <NavItem href={route('admin.audit.index')}        icon={<IconFileText />} label="History"      active={route().current('admin.audit.*')} />
                         <NavItem href={route('admin.settings.index')}     icon={<IconSettings />} label="Settings"     active={route().current('admin.settings.*')} />
                     </NavSection>
                 )}

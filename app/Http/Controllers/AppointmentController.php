@@ -39,6 +39,11 @@ class AppointmentController extends Controller
         $faculty = User::where('role', 'faculty')
             ->where('status', 'active')
             ->select('id', 'name', 'department', 'avatar')
+            ->with(['schedules' => fn($q) => $q
+                ->orderByRaw("FIELD(day,'Monday','Tuesday','Wednesday','Thursday','Friday','Saturday')")
+                ->orderBy('start_time')
+                ->select('id', 'user_id', 'day', 'start_time', 'end_time', 'subject', 'room')
+            ])
             ->orderBy('name')
             ->get()
             ->map(fn($f) => array_merge($f->toArray(), ['avatar_url' => $f->avatar_url]));

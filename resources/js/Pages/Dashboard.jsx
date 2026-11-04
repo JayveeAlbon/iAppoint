@@ -1,4 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import AdminDashboardOverview from '@/Components/AdminDashboardOverview';
 import { Head, Link, usePage } from '@inertiajs/react';
 
 function IconMap() {
@@ -91,7 +92,7 @@ function StudentQuickLinks() {
 }
 
 export default function Dashboard() {
-    const { auth } = usePage().props;
+    const { auth, reports } = usePage().props;
     const { user } = auth;
     const isFaculty = user.role === 'faculty';
     const isAdmin = user.role === 'admin';
@@ -117,6 +118,7 @@ export default function Dashboard() {
                 <div className="space-y-4">
                     {isFaculty && <FacultyStatusCard user={user} />}
                     {!isAdmin && <StudentQuickLinks />}
+                    {isAdmin && reports && <AdminDashboardOverview {...reports} />}
                 </div>
             </div>
         </AuthenticatedLayout>

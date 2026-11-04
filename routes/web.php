@@ -2,12 +2,12 @@
 
 use App\Http\Controllers\Admin\AppointmentController as AdminAppointmentController;
 use App\Http\Controllers\Admin\AuditController as AdminAuditController;
-use App\Http\Controllers\Admin\ReportController as AdminReportController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AdminFeedbackController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\AppointmentFeedbackController;
 use App\Http\Controllers\ConversationController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FacultyController;
 use App\Http\Controllers\FacultyStatusController;
 use App\Http\Controllers\FriendController;
@@ -29,9 +29,9 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
-})->middleware(['auth', 'active'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->middleware(['auth', 'active'])
+    ->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -104,7 +104,6 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/appointments', [AdminAppointmentController::class, 'index'])->name('appointments.index');
         Route::post('/appointments/{appointment}/approve', [AdminAppointmentController::class, 'approve'])->name('appointments.approve');
         Route::patch('/appointments/{appointment}/reject', [AdminAppointmentController::class, 'reject'])->name('appointments.reject');
-        Route::get('/reports', [AdminReportController::class, 'index'])->name('reports.index');
         Route::get('/audit', [AdminAuditController::class, 'index'])->name('audit.index');
         Route::get('/settings', fn() => Inertia::render('Admin/Settings/Index'))->name('settings.index');
         Route::get('/feedback', [AdminFeedbackController::class, 'index'])->name('feedback.index');

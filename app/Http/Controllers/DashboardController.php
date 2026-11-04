@@ -1,8 +1,7 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\CateringSession;
 use App\Models\Meeting;
 use App\Models\Message;
@@ -12,11 +11,13 @@ use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class ReportController extends Controller
+class DashboardController extends Controller
 {
     public function index(Request $request): Response
     {
-        abort_if(! $request->user()->isAdmin(), 403);
+        if (! $request->user()->isAdmin()) {
+            return Inertia::render('Dashboard');
+        }
 
         $userCounts = [
             'total'     => User::count(),
@@ -83,15 +84,17 @@ class ReportController extends Controller
             ->limit(5)
             ->get(['id', 'name', 'department']);
 
-        return Inertia::render('Admin/Reports/Index', [
-            'userCounts'        => $userCounts,
-            'locationStats'     => $locationStats,
-            'meetingStats'      => $meetingStats,
-            'messageStats'      => $messageStats,
-            'cateringStats'     => $cateringStats,
-            'registrationTrend' => $registrationTrend,
-            'messageTrend'      => $messageTrend,
-            'topFaculty'        => $topFaculty,
+        return Inertia::render('Dashboard', [
+            'reports' => [
+                'userCounts'        => $userCounts,
+                'locationStats'     => $locationStats,
+                'meetingStats'      => $meetingStats,
+                'messageStats'      => $messageStats,
+                'cateringStats'     => $cateringStats,
+                'registrationTrend' => $registrationTrend,
+                'messageTrend'      => $messageTrend,
+                'topFaculty'        => $topFaculty,
+            ],
         ]);
     }
 }

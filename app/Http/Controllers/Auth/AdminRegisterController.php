@@ -31,13 +31,14 @@ class AdminRegisterController extends Controller
         }
 
         $request->validate([
-            'name'     => 'required|string|max:255',
-            'email'    => 'required|string|lowercase|email|max:255|unique:'.User::class,
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'first_name' => 'required|string|max:125',
+            'last_name'  => 'required|string|max:125',
+            'email'      => 'required|string|lowercase|email|max:255|unique:'.User::class,
+            'password'   => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
         $user = User::create([
-            'name'     => $request->name,
+            'name'     => trim($request->first_name.' '.$request->last_name),
             'email'    => $request->email,
             'password' => Hash::make($request->password),
             'role'     => 'admin',

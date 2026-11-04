@@ -166,6 +166,32 @@ function StatusBadge({ status }) {
     );
 }
 
+// ── Schedule slot helpers ─────────────────────────────────────────────────────
+
+const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+/** Returns the next calendar date (as YYYY-MM-DD) for a given weekday name */
+function nextDateForDay(dayName) {
+    const idx = DAYS.indexOf(dayName);
+    const jsDay = (idx + 1) % 7;
+    const now = new Date();
+    const todayJs = now.getDay();
+    let diff = jsDay - todayJs;
+    if (diff < 0) diff += 7;
+    if (diff === 0) diff = 7;
+    const d = new Date(now);
+    d.setDate(d.getDate() + diff);
+    return d.toISOString().slice(0, 10);
+}
+
+/** Format "HH:MM:SS" to "h:MM AM/PM" */
+function fmt12(time) {
+    const [h, m] = time.split(':').map(Number);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12  = h % 12 || 12;
+    return `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
+}
+
 // ── Create Appointment Modal ───────────────────────────────────────────────────
 
 function CreateModal({ faculty, onClose }) {
@@ -176,12 +202,42 @@ function CreateModal({ faculty, onClose }) {
         requested_at: '',
     });
 
+    const [selectedDay,  setSelectedDay]  = useState(null);
+    const [selectedSlot, setSelectedSlot] = useState(null);
+
     function submit(e) {
         e.preventDefault();
         post(route('appointments.store'), {
             onSuccess: () => { reset(); onClose(); },
         });
     }
+
+    const chosenFaculty = faculty.find(f => String(f.id) === String(data.faculty_id));
+    const schedules     = chosenFaculty?.schedules ?? [];
+    const availableDays = DAYS.filter(d => schedules.some(s => s.day === d));
+    const daySlots      = schedules.filter(s => s.day === selectedDay);
+
+    function handleFacultyChange(e) {
+        setData('faculty_id', e.target.value);
+        setSelectedDay(null);
+        setSelectedSlot(null);
+        setData('requested_at', '');
+    }
+
+    function handleDaySelect(day) {
+        setSelectedDay(day);
+        setSelectedSlot(null);
+        setData('requested_at', '');
+    }
+
+    function handleSlotSelect(slot) {
+        setSelectedSlot(slot.id);
+        const date = nextDateForDay(slot.day);
+        const time = slot.start_time.slice(0, 5);
+        setData('requested_at', `${date}T${time}`);
+    }
+
+    const hasSchedules = schedules.length > 0;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
@@ -196,13 +252,13 @@ function CreateModal({ faculty, onClose }) {
                         <label className="mb-1 block text-xs font-medium text-gray-700">Faculty Member</label>
                         <select
                             value={data.faculty_id}
-                            onChange={e => setData('faculty_id', e.target.value)}
+                            onChange={handleFacultyChange}
                             className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
                         >
-                            <option value="">Select faculty…</option>
+                            <option value="">Select faculty...</option>
                             {faculty.map(f => (
                                 <option key={f.id} value={f.id}>
-                                    {f.name}{f.department ? ` — ${f.department}` : ''}
+                                    {f.name}{f.department ? ` - ${f.department}` : ''}
                                 </option>
                             ))}
                         </select>
@@ -221,23 +277,86 @@ function CreateModal({ faculty, onClose }) {
                         {errors.title && <p className="mt-1 text-xs text-red-500">{errors.title}</p>}
                     </div>
 
-                    <div>
-                        <label className="mb-1 block text-xs font-medium text-gray-700">Preferred Date & Time</label>
-                        <input
-                            type="datetime-local"
-                            value={data.requested_at}
-                            onChange={e => setData('requested_at', e.target.value)}
-                            className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
-                        />
-                        {errors.requested_at && <p className="mt-1 text-xs text-red-500">{errors.requested_at}</p>}
-                    </div>
+                    {data.faculty_id && (
+                        <div>
+                            <label className="mb-1 block text-xs font-medium text-gray-700">
+                                Faculty Schedule
+                            </label>
+
+                            {!hasSchedules ? (
+                                <div>
+                                    <p className="mb-1.5 text-xs text-gray-400 italic">
+                                        This faculty has no posted schedule. Pick any date &amp; time.
+                                    </p>
+                                    <input
+                                        type="datetime-local"
+                                        value={data.requested_at}
+                                        onChange={e => setData('requested_at', e.target.value)}
+                                        className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
+                                    />
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="mb-2 flex flex-wrap gap-1.5">
+                                        {availableDays.map(day => (
+                                            <button
+                                                key={day}
+                                                type="button"
+                                                onClick={() => handleDaySelect(day)}
+                                                className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                                                    selectedDay === day
+                                                        ? 'border-gray-900 bg-gray-900 text-white'
+                                                        : 'border-gray-200 text-gray-600 hover:border-gray-400'
+                                                }`}
+                                            >
+                                                {day}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {selectedDay && (
+                                        <div className="space-y-1.5">
+                                            {daySlots.map(slot => {
+                                                const active = selectedSlot === slot.id;
+                                                return (
+                                                    <button
+                                                        key={slot.id}
+                                                        type="button"
+                                                        onClick={() => handleSlotSelect(slot)}
+                                                        className={`w-full rounded-lg border px-3 py-2.5 text-left transition-colors ${
+                                                            active
+                                                                ? 'border-gray-900 bg-gray-900 text-white'
+                                                                : 'border-gray-200 text-gray-700 hover:border-gray-400'
+                                                        }`}
+                                                    >
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-sm font-medium">{slot.subject}</span>
+                                                            <span className={`text-xs ${active ? 'text-gray-300' : 'text-gray-400'}`}>
+                                                                {fmt12(slot.start_time)} - {fmt12(slot.end_time)}
+                                                            </span>
+                                                        </div>
+                                                        {slot.room && (
+                                                            <p className={`mt-0.5 text-xs ${active ? 'text-gray-300' : 'text-gray-400'}`}>
+                                                                Room {slot.room}
+                                                            </p>
+                                                        )}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                            {errors.requested_at && <p className="mt-1 text-xs text-red-500">{errors.requested_at}</p>}
+                        </div>
+                    )}
 
                     <div>
                         <label className="mb-1 block text-xs font-medium text-gray-700">Message (optional)</label>
                         <textarea
                             value={data.message}
                             onChange={e => setData('message', e.target.value)}
-                            placeholder="Briefly describe the purpose…"
+                            placeholder="Briefly describe the purpose..."
                             rows={3}
                             className="w-full resize-none rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
                         />
@@ -295,7 +414,7 @@ function AppointmentCard({ appt, isStudent, onGiveFeedback }) {
                     <div className="min-w-0">
                         <p className="truncate text-sm font-medium text-gray-900">{appt.title}</p>
                         <p className="text-xs text-gray-400">
-                            {personLabel}: {person?.name ?? '—'}
+                            {personLabel}: {person?.name ?? '-'}
                             {person?.department ? ` · ${person.department}` : ''}
                         </p>
                     </div>
@@ -359,7 +478,7 @@ export default function AppointmentsIndex({ appointments, faculty, viewAs }) {
     const isStudent = viewAs === 'student';
     const [showCreate, setShowCreate] = useState(false);
     const [feedbackFor, setFeedbackFor] = useState(null);
-    const [tab, setTab] = useState(isStudent ? 'pending' : 'pending');
+    const [tab, setTab] = useState('pending');
 
     const byStatus = {
         pending:   appointments.filter(a => a.status === 'pending'),

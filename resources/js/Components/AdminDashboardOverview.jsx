@@ -1,11 +1,9 @@
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head } from '@inertiajs/react';
 import {
     AreaChart, Area,
     BarChart, Bar,
     LineChart, Line,
     PieChart, Pie, Cell,
-    XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+    XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 
 // ── Palette ───────────────────────────────────────────────────────────────────
@@ -68,9 +66,9 @@ const CustomTooltip = ({ active, payload, label }) => {
     );
 };
 
-// ── Page ───────────────────────────────────────────────────────────────────────
+// ── Admin dashboard overview ──────────────────────────────────────────────────
 
-export default function AdminReports({
+export default function AdminDashboardOverview({
     userCounts, locationStats, meetingStats,
     messageStats, cateringStats, registrationTrend,
     messageTrend, topFaculty,
@@ -98,17 +96,8 @@ export default function AdminReports({
     ];
 
     return (
-        <AuthenticatedLayout
-            header={
-                <div>
-                    <h2 className="text-xl font-semibold text-gray-800">Reports</h2>
-                    <p className="mt-0.5 text-sm text-gray-500">Live system overview and analytics</p>
-                </div>
-            }
-        >
-            <Head title="Reports — Admin" />
-
-            <div className="space-y-6 p-6">
+        <div className="space-y-6">
+            <p className="text-sm text-gray-500">Live system overview and analytics</p>
                 {/* ── Top KPI row ──────────────────────────────────────────── */}
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     <StatTile label="Total Users"    value={userCounts.total}        color="#1F2937" />
@@ -264,7 +253,6 @@ export default function AdminReports({
                     <StatTile label="Messages (30d)" value={messageStats.last_30_days} color={COLORS.messages} />
                     <StatTile label="Catering Today" value={cateringStats.today}       color={COLORS.pending} />
                 </div>
-            </div>
-        </AuthenticatedLayout>
+        </div>
     );
 }

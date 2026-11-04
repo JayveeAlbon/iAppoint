@@ -7,7 +7,8 @@ import { Head, Link, useForm } from '@inertiajs/react';
 
 export default function FacultyRegister() {
     const { data, setData, post, processing, errors, reset } = useForm({
-        name: '',
+        first_name: '',
+        last_name: '',
         email: '',
         employee_id: '',
         department: '',
@@ -37,19 +38,34 @@ export default function FacultyRegister() {
             </div>
 
             <form onSubmit={submit} className="space-y-4">
-                <div>
-                    <InputLabel htmlFor="name" value="Full Name" />
-                    <TextInput
-                        id="name"
-                        name="name"
-                        value={data.name}
-                        className="mt-1 block w-full"
-                        autoComplete="name"
-                        isFocused={true}
-                        onChange={(e) => setData('name', e.target.value)}
-                        required
-                    />
-                    <InputError message={errors.name} className="mt-2" />
+                <div className="grid grid-cols-2 gap-3">
+                    <div>
+                        <InputLabel htmlFor="first_name" value="First Name" />
+                        <TextInput
+                            id="first_name"
+                            name="first_name"
+                            value={data.first_name}
+                            className="mt-1 block w-full"
+                            autoComplete="given-name"
+                            isFocused={true}
+                            onChange={(e) => setData('first_name', e.target.value)}
+                            required
+                        />
+                        <InputError message={errors.first_name} className="mt-2" />
+                    </div>
+                    <div>
+                        <InputLabel htmlFor="last_name" value="Last Name" />
+                        <TextInput
+                            id="last_name"
+                            name="last_name"
+                            value={data.last_name}
+                            className="mt-1 block w-full"
+                            autoComplete="family-name"
+                            onChange={(e) => setData('last_name', e.target.value)}
+                            required
+                        />
+                        <InputError message={errors.last_name} className="mt-2" />
+                    </div>
                 </div>
 
                 <div>

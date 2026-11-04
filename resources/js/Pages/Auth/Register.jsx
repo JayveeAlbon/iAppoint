@@ -19,7 +19,8 @@ const inputCls =
 
 export default function Register() {
     const { data, setData, post, processing, errors, reset } = useForm({
-        name: '',
+        first_name: '',
+        last_name: '',
         email: '',
         student_id: '',
         course: '',
@@ -118,18 +119,32 @@ export default function Register() {
                         </div>
 
                         <form onSubmit={submit} className="space-y-4">
-                            <Field id="name" label="Full Name" error={errors.name}>
-                                <input
-                                    id="name"
-                                    name="name"
-                                    autoComplete="name"
-                                    value={data.name}
-                                    onChange={(e) => setData('name', e.target.value)}
-                                    placeholder="e.g. Juan D. Cruz"
-                                    className={inputCls}
-                                    required
-                                />
-                            </Field>
+                            <div className="grid grid-cols-2 gap-3">
+                                <Field id="first_name" label="First Name" error={errors.first_name}>
+                                    <input
+                                        id="first_name"
+                                        name="first_name"
+                                        autoComplete="given-name"
+                                        value={data.first_name}
+                                        onChange={(e) => setData('first_name', e.target.value)}
+                                        placeholder="Juan"
+                                        className={inputCls}
+                                        required
+                                    />
+                                </Field>
+                                <Field id="last_name" label="Last Name" error={errors.last_name}>
+                                    <input
+                                        id="last_name"
+                                        name="last_name"
+                                        autoComplete="family-name"
+                                        value={data.last_name}
+                                        onChange={(e) => setData('last_name', e.target.value)}
+                                        placeholder="Cruz"
+                                        className={inputCls}
+                                        required
+                                    />
+                                </Field>
+                            </div>
 
                             <Field id="email" label="Email Address" error={errors.email} hint="Use your school email if you have one.">
                                 <input

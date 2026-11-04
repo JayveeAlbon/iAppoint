@@ -59,7 +59,7 @@ export default function AuditTrail({ logs, filters, eventGroups }) {
             header={
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="text-xl font-semibold text-gray-800">Audit Trail</h2>
+                        <h2 className="text-xl font-semibold text-gray-800">History</h2>
                         <p className="mt-0.5 text-sm text-gray-500">
                             {logs.total} event{logs.total !== 1 ? 's' : ''} recorded
                         </p>
@@ -67,7 +67,7 @@ export default function AuditTrail({ logs, filters, eventGroups }) {
                 </div>
             }
         >
-            <Head title="Audit Trail — Admin" />
+            <Head title="History — Admin" />
 
             <div className="p-6 space-y-4">
                 {/* Filters */}
