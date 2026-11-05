@@ -20,6 +20,37 @@ class DashboardController extends Controller
         $user = $request->user();
 
         if (! $user->isAdmin()) {
+            // ── Faculty stats ──────────────────────────────────────────────────────
+            $facultyStats = null;
+            if ($user->isFaculty()) {
+                $facultyAppts = Appointment::where('faculty_id', $user->id);
+                $facultyStats = [
+                    'totalStudents'    => User::where('role', 'student')->where('status', 'active')->count(),
+                    'appointmentsToday' => (clone $facultyAppts)
+                        ->whereDate('requested_at', today())
+                        ->whereIn('status', ['pending', 'approved'])
+                        ->count(),
+                    'pendingRequests'  => (clone $facultyAppts)->where('status', 'pending')->count(),
+                    'completed'        => (clone $facultyAppts)->where('status', 'completed')->count(),
+                ];
+
+                $upcomingFaculty = (clone $facultyAppts)
+                    ->where('status', 'approved')
+                    ->where('requested_at', '>=', now())
+                    ->with('student:id,name,course,year_level')
+                    ->orderBy('requested_at')
+                    ->limit(5)
+                    ->get(['id', 'student_id', 'title', 'requested_at'])
+                    ->map(fn (Appointment $a) => [
+                        'id'           => $a->id,
+                        'title'        => $a->title,
+                        'student'      => $a->student?->name ?? 'Student',
+                        'requested_at' => $a->requested_at?->toIso8601String(),
+                    ])
+                    ->values();
+            }
+
+            // ── Student stats ──────────────────────────────────────────────────────
             $studentAppointments = $user->isStudent()
                 ? Appointment::where('student_id', $user->id)
                 : null;
@@ -58,8 +89,10 @@ class DashboardController extends Controller
                 : [];
 
             return Inertia::render('Dashboard', [
-                'appointmentUpdates' => $appointmentUpdates,
-                'appointmentSummary' => $studentAppointments ? [
+                'facultyStats'        => $facultyStats,
+                'upcomingFacultyAppts'=> $facultyStats ? $upcomingFaculty : [],
+                'appointmentUpdates'  => $appointmentUpdates,
+                'appointmentSummary'  => $studentAppointments ? [
                     'upcoming' => (clone $studentAppointments)
                         ->where('status', 'approved')
                         ->where('requested_at', '>=', now())

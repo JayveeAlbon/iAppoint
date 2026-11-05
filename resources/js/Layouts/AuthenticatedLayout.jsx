@@ -142,6 +142,15 @@ function IconBell() {
     );
 }
 
+function IconMessageSquare() {
+    return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            <line x1="9" y1="10" x2="15" y2="10" /><line x1="9" y1="14" x2="13" y2="14" />
+        </svg>
+    );
+}
+
 
 // ── Nav components ─────────────────────────────────────────────────────────────
 
@@ -394,6 +403,13 @@ function Sidebar({ user, notifications }) {
                         badge={notifications?.total ?? 0}
                         active={route().current('notifications.*')}
                     />
+                    {!isAdmin && (
+                        <NavItem
+                            icon={<IconMessageSquare />}
+                            label="Feedback"
+                            onClick={() => window.dispatchEvent(new Event('open-feedback'))}
+                        />
+                    )}
                     {isFaculty && (
                         <NavItem
                             href={route('faculty-status.index')}

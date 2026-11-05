@@ -326,6 +326,13 @@ export default function FeedbackFab() {
     const [captureError, setCaptureError] = useState(null);
     const fileInputRef = useRef(null);
 
+    // Allow external triggers (e.g. sidebar nav item) to open the modal
+    useEffect(() => {
+        function handleOpen() { open(); }
+        window.addEventListener('open-feedback', handleOpen);
+        return () => window.removeEventListener('open-feedback', handleOpen);
+    }, []);
+
     function open() {
         setStep('menu');
         setBlob(null);
