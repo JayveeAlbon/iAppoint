@@ -8,16 +8,15 @@ echo "DB_PORT:       ${DB_PORT}"
 echo "DB_DATABASE:   ${DB_DATABASE}"
 echo "APP_URL:       ${APP_URL}"
 echo "PHP version:   $(php -r 'echo PHP_VERSION;')"
-echo "Extensions:    $(php -m | tr '\n' ' ')"
 
 cd /var/www/html
 
-# Clear build-time cache (best-effort — don't crash if it fails)
+# Clear build-time cache
 echo "--- Clearing build-time config cache ---"
 php artisan config:clear  || echo "WARN: config:clear failed"
 php artisan cache:clear   || echo "WARN: cache:clear failed"
 
-# Test database connection before migrating
+# Test database connection
 echo "--- Testing database connection ---"
 php -r "
 try {
@@ -32,9 +31,13 @@ try {
 }
 " || true
 
-# Run migrations (best-effort — app can still serve static pages if DB fails)
+# Run migrations
 echo "--- Running migrations ---"
-php artisan migrate --force --no-interaction 2>&1 || echo "WARN: migrate failed — continuing anyway"
+php artisan migrate --force --no-interaction 2>&1 || echo "WARN: migrate failed"
+
+# Seed default users (admin, faculty, student) — uses firstOrCreate so safe to run every time
+echo "--- Seeding default users ---"
+php artisan db:seed --force --no-interaction 2>&1 || echo "WARN: seed failed"
 
 # Cache config/routes/views with real env vars
 echo "--- Caching config ---"
