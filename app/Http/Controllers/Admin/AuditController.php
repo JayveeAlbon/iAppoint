@@ -38,7 +38,15 @@ class AuditController extends Controller
 
         $logs = $query->paginate(50)->withQueryString();
 
-        $eventGroups = AuditLog::selectRaw("SPLIT_PART(event, '.', 1) as grp")
+        $eventGroupExpression = match (AuditLog::query()->getConnection()->getDriverName()) {
+            'mysql', 'mariadb' => "SUBSTRING_INDEX(event, '.', 1)",
+            'pgsql' => "SPLIT_PART(event, '.', 1)",
+            'sqlite' => "SUBSTR(event, 1, INSTR(event || '.', '.') - 1)",
+            'sqlsrv' => "LEFT(event, CHARINDEX('.', event + '.') - 1)",
+            default => throw new \RuntimeException('Unsupported database driver for audit event groups.'),
+        };
+
+        $eventGroups = AuditLog::selectRaw("{$eventGroupExpression} as grp")
             ->distinct()
             ->orderBy('grp')
             ->pluck('grp');

@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Appointment;
 use App\Models\CateringSession;
 use App\Models\Meeting;
 use App\Models\Message;
 use App\Models\User;
+use App\Notifications\AppointmentApprovedForStudentNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -15,8 +17,66 @@ class DashboardController extends Controller
 {
     public function index(Request $request): Response
     {
-        if (! $request->user()->isAdmin()) {
-            return Inertia::render('Dashboard');
+        $user = $request->user();
+
+        if (! $user->isAdmin()) {
+            $studentAppointments = $user->isStudent()
+                ? Appointment::where('student_id', $user->id)
+                : null;
+
+            $appointmentUpdates = $user->isStudent()
+                ? $user->unreadNotifications()
+                    ->where('type', AppointmentApprovedForStudentNotification::class)
+                    ->latest()
+                    ->limit(5)
+                    ->get()
+                    ->map(fn ($notification) => [
+                        'id' => $notification->id,
+                        'title' => $notification->data['title'] ?? 'Appointment approved',
+                        'faculty' => $notification->data['faculty_name'] ?? 'Faculty member',
+                        'requested_at' => $notification->data['requested_at'] ?? null,
+                        'admin_notes' => $notification->data['admin_notes'] ?? null,
+                    ])
+                    ->values()
+                : [];
+
+            $upcomingAppointments = $studentAppointments
+                ? (clone $studentAppointments)
+                    ->where('status', 'approved')
+                    ->where('requested_at', '>=', now())
+                    ->with('faculty:id,name')
+                    ->orderBy('requested_at')
+                    ->limit(5)
+                    ->get(['id', 'faculty_id', 'title', 'requested_at'])
+                    ->map(fn (Appointment $appointment) => [
+                        'id' => $appointment->id,
+                        'title' => $appointment->title,
+                        'faculty' => $appointment->faculty?->name ?? 'Faculty member',
+                        'requested_at' => $appointment->requested_at?->toIso8601String(),
+                    ])
+                    ->values()
+                : [];
+
+            return Inertia::render('Dashboard', [
+                'appointmentUpdates' => $appointmentUpdates,
+                'appointmentSummary' => $studentAppointments ? [
+                    'upcoming' => (clone $studentAppointments)
+                        ->where('status', 'approved')
+                        ->where('requested_at', '>=', now())
+                        ->count(),
+                    'completedThisMonth' => (clone $studentAppointments)
+                        ->where('status', 'completed')
+                        ->whereBetween('updated_at', [now()->startOfMonth(), now()->endOfMonth()])
+                        ->count(),
+                    'pending' => (clone $studentAppointments)
+                        ->where('status', 'pending')
+                        ->count(),
+                    'rejected' => (clone $studentAppointments)
+                        ->where('status', 'rejected')
+                        ->count(),
+                ] : null,
+                'upcomingAppointments' => $upcomingAppointments,
+            ]);
         }
 
         $userCounts = [

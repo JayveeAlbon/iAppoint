@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Notifications\UserRegisteredForAdminNotification;
+use App\Services\AdminNotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -15,6 +16,8 @@ use Illuminate\Validation\ValidationException;
 
 class GoogleAuthController extends Controller
 {
+    public function __construct(private readonly AdminNotificationService $adminNotifications) {}
+
     public function callback(Request $request): RedirectResponse
     {
         $request->validate([
@@ -81,6 +84,7 @@ class GoogleAuthController extends Controller
             ]);
             $wasCreated = true;
 
+            $this->adminNotifications->userRegistered($user);
             $this->notifyAdminsOfNewUser($user);
         } elseif (! $user->google_id) {
             $user->google_id = $googleId;

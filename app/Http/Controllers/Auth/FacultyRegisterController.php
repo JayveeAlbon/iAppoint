@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\AdminNotificationService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -15,6 +16,8 @@ use Inertia\Response;
 
 class FacultyRegisterController extends Controller
 {
+    public function __construct(private readonly AdminNotificationService $adminNotifications) {}
+
     public function create(): Response
     {
         return Inertia::render('Auth/FacultyRegister');
@@ -41,6 +44,8 @@ class FacultyRegisterController extends Controller
             'department'      => $request->department,
             'office_location' => $request->office_location,
         ]);
+
+        $this->adminNotifications->userRegistered($user);
 
         event(new Registered($user));
 

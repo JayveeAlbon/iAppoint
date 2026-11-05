@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\AdminNotificationService;
 use App\Services\AuditLogService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -16,7 +17,10 @@ use Inertia\Response;
 
 class RegisteredUserController extends Controller
 {
-    public function __construct(private readonly AuditLogService $audit) {}
+    public function __construct(
+        private readonly AuditLogService $audit,
+        private readonly AdminNotificationService $adminNotifications,
+    ) {}
 
     public function create(): Response
     {
@@ -45,6 +49,8 @@ class RegisteredUserController extends Controller
             'course'     => $request->course,
             'year_level' => $request->year_level,
         ]);
+
+        $this->adminNotifications->userRegistered($user);
 
         $this->audit->log('user.registered', $user, [
             'name'  => $user->name,

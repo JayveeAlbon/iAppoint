@@ -12,6 +12,7 @@ use App\Http\Controllers\FacultyController;
 use App\Http\Controllers\FacultyStatusController;
 use App\Http\Controllers\FriendController;
 use App\Http\Controllers\MeetingController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ScheduleController;
 use Illuminate\Foundation\Application;
@@ -41,6 +42,7 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::middleware(['auth', 'active'])->group(function () {
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
 
     // ── Faculty directory + map ───────────────────────────────────────────────
     Route::get('/faculty', [FacultyController::class, 'index'])->name('faculty.directory');

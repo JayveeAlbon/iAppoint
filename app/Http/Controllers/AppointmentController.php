@@ -37,8 +37,8 @@ class AppointmentController extends Controller
             ->get();
 
         $faculty = User::where('role', 'faculty')
-            ->where('status', 'active')
-            ->select('id', 'name', 'department', 'avatar')
+            ->whereIn('status', ['active', 'pending'])
+            ->select('id', 'name', 'department', 'avatar', 'status')
             ->with(['schedules' => fn($q) => $q
                 ->orderByRaw("CASE day WHEN 'Monday' THEN 1 WHEN 'Tuesday' THEN 2 WHEN 'Wednesday' THEN 3 WHEN 'Thursday' THEN 4 WHEN 'Friday' THEN 5 WHEN 'Saturday' THEN 6 ELSE 7 END")
                 ->orderBy('start_time')
@@ -61,7 +61,12 @@ class AppointmentController extends Controller
         abort_if(!$user->isStudent(), 403);
 
         $data = $request->validate([
-            'faculty_id'   => ['required', Rule::exists('users', 'id')->where('role', 'faculty')->where('status', 'active')],
+            'faculty_id'   => [
+                'required',
+                Rule::exists('users', 'id')
+                    ->where('role', 'faculty')
+                    ->whereIn('status', ['active', 'pending']),
+            ],
             'title'        => 'required|string|max:200',
             'message'      => 'nullable|string|max:1000',
             'requested_at' => 'required|date|after:now',

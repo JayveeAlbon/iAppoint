@@ -15,7 +15,21 @@ class AppointmentApprovedForStudentNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['database', 'mail'];
+    }
+
+    public function toArray(object $notifiable): array
+    {
+        $appointment = $this->appointment->loadMissing('faculty');
+
+        return [
+            'event' => 'appointment.approved',
+            'appointment_id' => $appointment->id,
+            'title' => $appointment->title,
+            'faculty_name' => $appointment->faculty?->name,
+            'requested_at' => $appointment->requested_at?->toIso8601String(),
+            'admin_notes' => $appointment->admin_notes,
+        ];
     }
 
     public function toMail(object $notifiable): MailMessage

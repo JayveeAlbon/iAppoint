@@ -133,6 +133,15 @@ function IconActivity() {
     );
 }
 
+function IconBell() {
+    return (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" />
+            <path d="M10 21h4" />
+        </svg>
+    );
+}
+
 
 // ── Nav components ─────────────────────────────────────────────────────────────
 
@@ -341,26 +350,30 @@ function Sidebar({ user, notifications }) {
                     <NavItem href={route('faculty.map')} icon={<IconMap />} label="Faculty Map" active={route().current('faculty.map')} />
                 </NavSection>
 
-                <NavSection label="Appointments">
-                    <NavItem
-                        href={route('appointments.index')}
-                        icon={<IconCalendar />}
-                        label="My Appointments"
-                        active={route().current('appointments.*')}
-                    />
-                    {isFaculty && (
-                        <NavItem href={route('schedule.index')} icon={<IconClock />} label="My Schedule" active={route().current('schedule.index')} />
-                    )}
-                </NavSection>
+                {!isAdmin && (
+                    <NavSection label="Appointments">
+                        <NavItem
+                            href={route('appointments.index')}
+                            icon={<IconCalendar />}
+                            label="My Appointments"
+                            active={route().current('appointments.*')}
+                        />
+                        {isFaculty && (
+                            <NavItem href={route('schedule.index')} icon={<IconClock />} label="My Schedule" active={route().current('schedule.index')} />
+                        )}
+                    </NavSection>
+                )}
 
                 <NavSection label="Community">
-                    <NavItem
-                        href={route('friends.index')}
-                        icon={<IconUserPlus />}
-                        label="Friends"
-                        badge={pendingFriends}
-                        active={route().current('friends.*')}
-                    />
+                    {!isAdmin && (
+                        <NavItem
+                            href={route('friends.index')}
+                            icon={<IconUserPlus />}
+                            label="Friends"
+                            badge={pendingFriends}
+                            active={route().current('friends.*')}
+                        />
+                    )}
                     <NavItem
                         href={route('messages.index')}
                         icon={<IconMessage />}
@@ -374,6 +387,13 @@ function Sidebar({ user, notifications }) {
                         label="Meetings"
                         active={route().current('meetings.*')}
                     />
+                    <NavItem
+                        href={route('notifications.index')}
+                        icon={<IconBell />}
+                        label="Notifications"
+                        badge={notifications?.total ?? 0}
+                        active={route().current('notifications.*')}
+                    />
                     {isFaculty && (
                         <NavItem
                             href={route('faculty-status.index')}
@@ -386,7 +406,7 @@ function Sidebar({ user, notifications }) {
 
                 {isAdmin && (
                     <NavSection label="Administration">
-                        <NavItem href={route('admin.users.index')}        icon={<IconUsers />}    label="Users"        active={route().current('admin.users.*')} />
+                        <NavItem href={route('admin.users.index')}        icon={<IconUsers />}    label="Users"        badge={notifications?.pending_faculty ?? 0} active={route().current('admin.users.*')} />
                         <NavItem href={route('admin.appointments.index')} icon={<IconCalendar />} label="Appointments" badge={notifications?.pending_appointments ?? 0} active={route().current('admin.appointments.*')} />
                         <NavItem href={route('admin.feedback.index')}     icon={<IconMessage />}  label="Feedback"     badge={notifications?.pending_admin_feedback ?? 0} active={route().current('admin.feedback.*')} />
                         <NavItem href={route('admin.audit.index')}        icon={<IconFileText />} label="History"      active={route().current('admin.audit.*')} />

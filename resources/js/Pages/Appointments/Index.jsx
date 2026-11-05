@@ -181,7 +181,10 @@ function nextDateForDay(dayName) {
     if (diff === 0) diff = 7;
     const d = new Date(now);
     d.setDate(d.getDate() + diff);
-    return d.toISOString().slice(0, 10);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const date = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${date}`;
 }
 
 /** Format "HH:MM:SS" to "h:MM AM/PM" */
@@ -259,6 +262,7 @@ function CreateModal({ faculty, onClose }) {
                             {faculty.map(f => (
                                 <option key={f.id} value={f.id}>
                                     {f.name}{f.department ? ` - ${f.department}` : ''}
+                                    {f.status === 'pending' ? ' (Pending approval)' : ''}
                                 </option>
                             ))}
                         </select>
@@ -279,6 +283,11 @@ function CreateModal({ faculty, onClose }) {
 
                     {data.faculty_id && (
                         <div>
+                            {chosenFaculty?.status === 'pending' && (
+                                <p className="mb-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                                    This faculty account is awaiting admin approval. Your appointment request can still be submitted.
+                                </p>
+                            )}
                             <label className="mb-1 block text-xs font-medium text-gray-700">
                                 Faculty Schedule
                             </label>
@@ -316,6 +325,9 @@ function CreateModal({ faculty, onClose }) {
 
                                     {selectedDay && (
                                         <div className="space-y-1.5">
+                                            <p className="text-xs text-gray-400">
+                                                Select a time slot to enable your request.
+                                            </p>
                                             {daySlots.map(slot => {
                                                 const active = selectedSlot === slot.id;
                                                 return (
@@ -323,10 +335,11 @@ function CreateModal({ faculty, onClose }) {
                                                         key={slot.id}
                                                         type="button"
                                                         onClick={() => handleSlotSelect(slot)}
+                                                        aria-pressed={active}
                                                         className={`w-full rounded-lg border px-3 py-2.5 text-left transition-colors ${
                                                             active
                                                                 ? 'border-gray-900 bg-gray-900 text-white'
-                                                                : 'border-gray-200 text-gray-700 hover:border-gray-400'
+                                                                : 'border-gray-200 bg-white text-gray-700 hover:border-gray-500 hover:bg-gray-50'
                                                         }`}
                                                     >
                                                         <div className="flex items-center justify-between">
@@ -343,6 +356,11 @@ function CreateModal({ faculty, onClose }) {
                                                     </button>
                                                 );
                                             })}
+                                            {!selectedSlot && (
+                                                <p className="text-xs text-amber-700">
+                                                    Choose the subject and time above before submitting.
+                                                </p>
+                                            )}
                                         </div>
                                     )}
                                 </>

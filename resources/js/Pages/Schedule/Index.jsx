@@ -107,12 +107,12 @@ function ScheduleForm({ initial = null, onCancel }) {
                 </div>
 
                 <div className="sm:col-span-2">
-                    <label className="mb-1 block text-xs font-medium text-gray-600">Subject / Course</label>
+                    <label className="mb-1 block text-xs font-medium text-gray-600">Vacant Time</label>
                     <input
                         type="text"
                         value={data.subject}
                         onChange={(e) => setData('subject', e.target.value)}
-                        placeholder="e.g. CS301 — Data Structures"
+                        placeholder="e.g. Consultation / Vacant"
                         required
                         className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
                     />

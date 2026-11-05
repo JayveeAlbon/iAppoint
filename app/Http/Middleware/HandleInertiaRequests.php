@@ -4,7 +4,10 @@ namespace App\Http\Middleware;
 
 use App\Models\Appointment;
 use App\Models\Friendship;
+use App\Models\User;
 use App\Models\UserFeedback;
+use App\Notifications\AppointmentApprovedForStudentNotification;
+use App\Notifications\UserRegisteredInAppNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Middleware;
@@ -61,15 +64,39 @@ class HandleInertiaRequests extends Middleware
             ? Appointment::where('status', 'pending')->count()
             : 0;
 
+        $pendingFaculty = $user->isAdmin()
+            ? User::where('role', 'faculty')->where('status', 'pending')->count()
+            : 0;
+
         $pendingAdminFeedback = $user->isAdmin()
             ? UserFeedback::where('status', 'open')->count()
             : 0;
+        $newRegistrations = $user->isAdmin()
+            ? $user->unreadNotifications()
+                ->where('type', UserRegisteredInAppNotification::class)
+                ->count()
+            : 0;
+        $approvedAppointments = $user->isStudent()
+            ? $user->unreadNotifications()
+                ->where('type', AppointmentApprovedForStudentNotification::class)
+                ->count()
+            : 0;
+        $total = $unreadMessages
+            + ($user->isAdmin() ? 0 : $pendingFriends)
+            + $newRegistrations
+            + $approvedAppointments
+            + $pendingAppointments
+            + $pendingAdminFeedback;
 
         return [
             'pending_friends'         => $pendingFriends,
             'unread_messages'         => $unreadMessages,
+            'pending_faculty'         => $pendingFaculty,
             'pending_appointments'    => $pendingAppointments,
             'pending_admin_feedback'  => $pendingAdminFeedback,
+            'new_registrations'       => $newRegistrations,
+            'approved_appointments'   => $approvedAppointments,
+            'total'                   => $total,
         ];
     }
 }
