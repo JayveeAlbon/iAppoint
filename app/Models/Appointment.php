@@ -17,11 +17,15 @@ class Appointment extends Model
         'status',
         'admin_notes',
         'approved_at',
+        'reminder_24h_sent_at',
+        'reminder_1h_sent_at',
     ];
 
     protected $casts = [
-        'requested_at' => 'datetime',
-        'approved_at'  => 'datetime',
+        'requested_at'         => 'datetime',
+        'approved_at'          => 'datetime',
+        'reminder_24h_sent_at' => 'datetime',
+        'reminder_1h_sent_at'  => 'datetime',
     ];
 
     public function student(): BelongsTo

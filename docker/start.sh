@@ -35,11 +35,11 @@ try {
 echo "--- Running migrations ---"
 php artisan migrate --force --no-interaction 2>&1 || echo "WARN: migrate failed"
 
-# Seed default users (admin, faculty, student) — uses firstOrCreate so safe to run every time
+# Seed default users
 echo "--- Seeding default users ---"
 php artisan db:seed --force --no-interaction 2>&1 || echo "WARN: seed failed"
 
-# Cache config/routes/views with real env vars
+# Cache config/routes/views
 echo "--- Caching config ---"
 php artisan config:cache  || echo "WARN: config:cache failed"
 php artisan route:cache   || echo "WARN: route:cache failed"
@@ -47,6 +47,10 @@ php artisan view:cache    || echo "WARN: view:cache failed"
 
 # Ensure storage link exists
 php artisan storage:link --force 2>/dev/null || true
+
+# Start the Laravel scheduler in the background (runs every minute, checks every 15 min for reminders)
+echo "--- Starting scheduler ---"
+(while true; do php artisan schedule:run --no-interaction >> /dev/null 2>&1; sleep 60; done) &
 
 echo "--- Starting supervisord (nginx + php-fpm + queue) ---"
 exec /usr/bin/supervisord -c /etc/supervisord.conf
