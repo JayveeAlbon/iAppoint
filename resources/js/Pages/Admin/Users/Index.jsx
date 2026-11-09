@@ -132,10 +132,97 @@ function EditUserModal({ user, onClose }) {
     );
 }
 
+// ── Add Faculty Modal ──────────────────────────────────────────────────────────
+
+function AddFacultyModal({ onClose }) {
+    const { data, setData, post, processing, errors, reset } = useForm({
+        name:            '',
+        email:           '',
+        employee_id:     '',
+        department:      '',
+        office_location: '',
+        password:        '',
+    });
+
+    function submit(e) {
+        e.preventDefault();
+        post(route('admin.faculty.store'), {
+            preserveScroll: true,
+            onSuccess: () => { reset(); onClose(); },
+        });
+    }
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
+                <h3 className="mb-1 text-base font-semibold text-gray-900">Add Faculty</h3>
+                <p className="mb-4 text-xs text-gray-500">Create a faculty account directly. They can log in immediately.</p>
+
+                <form onSubmit={submit} className="space-y-3">
+                    <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-700">Full Name</label>
+                        <input type="text" value={data.name} onChange={e => setData('name', e.target.value)}
+                            placeholder="e.g. Juan Dela Cruz"
+                            className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none" />
+                        {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
+                    </div>
+                    <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-700">Email</label>
+                        <input type="email" value={data.email} onChange={e => setData('email', e.target.value)}
+                            placeholder="faculty@scc.edu.ph"
+                            className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none" />
+                        {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
+                    </div>
+                    <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-700">Employee ID</label>
+                        <input type="text" value={data.employee_id} onChange={e => setData('employee_id', e.target.value)}
+                            placeholder="e.g. EMP-001"
+                            className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none" />
+                        {errors.employee_id && <p className="mt-1 text-xs text-red-500">{errors.employee_id}</p>}
+                    </div>
+                    <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-700">Department</label>
+                        <input type="text" value={data.department} onChange={e => setData('department', e.target.value)}
+                            placeholder="e.g. Computer Science"
+                            className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none" />
+                        {errors.department && <p className="mt-1 text-xs text-red-500">{errors.department}</p>}
+                    </div>
+                    <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-700">Office Location <span className="text-gray-400">(optional)</span></label>
+                        <input type="text" value={data.office_location} onChange={e => setData('office_location', e.target.value)}
+                            placeholder="e.g. Room 201"
+                            className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none" />
+                        {errors.office_location && <p className="mt-1 text-xs text-red-500">{errors.office_location}</p>}
+                    </div>
+                    <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-700">Password</label>
+                        <input type="password" value={data.password} onChange={e => setData('password', e.target.value)}
+                            placeholder="Min. 8 characters"
+                            className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none" />
+                        {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password}</p>}
+                    </div>
+
+                    <div className="mt-4 flex gap-2">
+                        <button type="button" onClick={onClose}
+                            className="flex-1 rounded-lg border border-gray-200 py-2.5 text-sm text-gray-600 hover:bg-gray-50">
+                            Cancel
+                        </button>
+                        <button type="submit" disabled={processing || !data.name || !data.email || !data.employee_id || !data.department || !data.password}
+                            className="flex-1 rounded-lg bg-gray-900 py-2.5 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50">
+                            {processing ? 'Creating…' : 'Create Faculty'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
+
 // ── Page ───────────────────────────────────────────────────────────────────────
 
 export default function AdminUsersIndex({ users, filters, counts }) {
     const [editUser, setEditUser] = useState(null);
+    const [showAddFaculty, setShowAddFaculty] = useState(false);
     const [search, setSearch]     = useState(filters.q ?? '');
     const [role, setRole]         = useState(filters.role ?? '');
     const [statusFilter, setStatusFilter] = useState(filters.status ?? '');
@@ -165,23 +252,33 @@ export default function AdminUsersIndex({ users, filters, counts }) {
     return (
         <AuthenticatedLayout
             header={
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h2 className="text-xl font-semibold text-gray-800">User Management</h2>
-                        <p className="mt-0.5 text-sm text-gray-500">
-                            {counts.total} total · {counts.faculty} faculty · {counts.student} students · {counts.admin} admins
-                            {pendingCount > 0 && (
-                                <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
-                                    {pendingCount} pending approval
-                                </span>
-                            )}
-                        </p>
+                <div className="flex items-center justify-between w-full">
+                        <div>
+                            <h2 className="text-xl font-semibold text-gray-800">User Management</h2>
+                            <p className="mt-0.5 text-sm text-gray-500">
+                                {counts.total} total · {counts.faculty} faculty · {counts.student} students · {counts.admin} admins
+                                {pendingCount > 0 && (
+                                    <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                                        {pendingCount} pending approval
+                                    </span>
+                                )}
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => setShowAddFaculty(true)}
+                            className="flex items-center gap-1.5 rounded-md bg-gray-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-gray-700"
+                        >
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                            </svg>
+                            Add Faculty
+                        </button>
                     </div>
-                </div>
             }
         >
             <Head title="Users — Admin" />
             {editUser && <EditUserModal user={editUser} onClose={() => setEditUser(null)} />}
+            {showAddFaculty && <AddFacultyModal onClose={() => setShowAddFaculty(false)} />}
 
             <div className="p-6 space-y-4">
                 {/* Pending approvals banner */}

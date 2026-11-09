@@ -81,6 +81,7 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     // ── Administration (admin only) ───────────────────────────────────────────
     Route::prefix('admin')->name('admin.')->group(function () {
+        Route::post('/faculty', [AdminUserController::class, 'storeFaculty'])->name('faculty.store');
         Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
         Route::post('/users/{user}/approve', [AdminUserController::class, 'approve'])->name('users.approve');
         Route::delete('/users/{user}/reject', [AdminUserController::class, 'reject'])->name('users.reject');

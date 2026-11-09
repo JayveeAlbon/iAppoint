@@ -8,6 +8,7 @@ use App\Notifications\UserApprovedNotification;
 use App\Services\AuditLogService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -56,6 +57,39 @@ class UserController extends Controller
                 'admin'     => User::where('role', 'admin')->count(),
             ],
         ]);
+    }
+
+    public function storeFaculty(Request $request): RedirectResponse
+    {
+        abort_if(! $request->user()->isAdmin(), 403);
+
+        $data = $request->validate([
+            'name'            => 'required|string|max:255',
+            'email'           => 'required|email|max:255|unique:users,email',
+            'employee_id'     => 'required|string|max:50|unique:users,employee_id',
+            'department'      => 'required|string|max:255',
+            'office_location' => 'nullable|string|max:255',
+            'password'        => 'required|string|min:8',
+        ]);
+
+        $user = User::create([
+            'name'              => $data['name'],
+            'email'             => $data['email'],
+            'password'          => Hash::make($data['password']),
+            'role'              => 'faculty',
+            'status'            => 'active',
+            'employee_id'       => $data['employee_id'],
+            'department'        => $data['department'],
+            'office_location'   => $data['office_location'] ?? null,
+            'email_verified_at' => now(),
+        ]);
+
+        $this->audit->log('faculty.created', $user, [
+            'name'  => $user->name,
+            'email' => $user->email,
+        ]);
+
+        return back()->with('success', "Faculty account created for {$user->name}.");
     }
 
     public function approve(Request $request, User $user): RedirectResponse

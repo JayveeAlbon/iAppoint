@@ -308,10 +308,7 @@ export default function Welcome({ laravelVersion, phpVersion }) {
                                                 <Link href={route('register')} className="font-medium text-slate-900 hover:underline">
                                                     Register as student
                                                 </Link>
-                                                <span className="mx-2 text-slate-300">·</span>
-                                                <Link href={route('faculty.register')} className="font-medium text-slate-900 hover:underline">
-                                                    Register as faculty
-                                                </Link>
+
                                             </div>
                                         </>
                                     )}

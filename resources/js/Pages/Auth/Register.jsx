@@ -262,15 +262,7 @@ export default function Register() {
                                     Log in
                                 </Link>
                             </p>
-                            <p>
-                                Are you faculty?{' '}
-                                <Link
-                                    href={route('faculty.register')}
-                                    className="font-medium text-slate-900 underline underline-offset-2 hover:text-slate-700"
-                                >
-                                    Register as Faculty
-                                </Link>
-                            </p>
+
                         </div>
                     </div>
                 </div>

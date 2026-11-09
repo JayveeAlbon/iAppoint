@@ -5,7 +5,6 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Http\Controllers\Auth\EmailVerificationNotificationController;
 use App\Http\Controllers\Auth\EmailVerificationPromptController;
-use App\Http\Controllers\Auth\FacultyRegisterController;
 use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordController;
@@ -19,12 +18,6 @@ Route::middleware('guest')->group(function () {
     Route::get('register', [RegisteredUserController::class, 'create'])
         ->name('register');
     Route::post('register', [RegisteredUserController::class, 'store']);
-
-    // Faculty registration
-    Route::get('iappoint/auth/faculty', [FacultyRegisterController::class, 'create'])
-        ->name('faculty.register');
-    Route::post('iappoint/auth/faculty', [FacultyRegisterController::class, 'store'])
-        ->name('faculty.register.store');
 
     // Admin one-time registration
     Route::get('iappoint/admin/register', [AdminRegisterController::class, 'create'])
