@@ -247,7 +247,7 @@ function CreateModal({ faculty, onClose }) {
             <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
                 <h3 className="mb-4 text-base font-semibold text-gray-900">Request Appointment</h3>
                 <p className="mb-4 text-xs text-gray-500">
-                    Your request will be reviewed by the admin before it is confirmed.
+                    Your appointment will be confirmed automatically and both you and the faculty will be notified.
                 </p>
 
                 <form onSubmit={submit} className="space-y-3">
@@ -394,7 +394,7 @@ function CreateModal({ faculty, onClose }) {
                             disabled={processing || !data.faculty_id || !data.title || !data.requested_at}
                             className="flex-1 rounded-lg bg-gray-900 py-2.5 text-sm font-medium text-white hover:bg-gray-700 disabled:opacity-50"
                         >
-                            Submit Request
+                            Book Appointment
                         </button>
                     </div>
                 </form>
@@ -478,7 +478,7 @@ function AppointmentCard({ appt, isStudent, onGiveFeedback }) {
                 )}
             </div>
 
-            {isStudent && appt.status === 'pending' && (
+            {isStudent && (appt.status === 'pending' || appt.status === 'approved') && (
                 <button
                     onClick={cancel}
                     className="flex-shrink-0 rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-400 hover:bg-red-50 hover:text-red-600"
