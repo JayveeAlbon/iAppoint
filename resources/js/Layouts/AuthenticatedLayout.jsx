@@ -21,14 +21,6 @@ function IconUsers() {
     );
 }
 
-function IconMap() {
-    return (
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
-        </svg>
-    );
-}
-
 function IconCalendar() {
     return (
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -356,7 +348,6 @@ function Sidebar({ user, notifications }) {
 
                 <NavSection label="Faculty">
                     <NavItem href={route('faculty.directory')} icon={<IconUsers />} label="Find Faculty" active={route().current('faculty.directory')} />
-                    <NavItem href={route('faculty.map')} icon={<IconMap />} label="Faculty Map" active={route().current('faculty.map')} />
                 </NavSection>
 
                 {!isAdmin && (

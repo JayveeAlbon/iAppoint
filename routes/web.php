@@ -44,9 +44,8 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
 
-    // ── Faculty directory + map ───────────────────────────────────────────────
+    // ── Faculty directory ─────────────────────────────────────────────────────
     Route::get('/faculty', [FacultyController::class, 'index'])->name('faculty.directory');
-    Route::get('/faculty/map', [FacultyController::class, 'map'])->name('faculty.map');
     Route::get('/faculty/{faculty}/schedule', [FacultyController::class, 'schedule'])->name('faculty.schedule');
 
     // ── Faculty-only: location consent + GPS ─────────────────────────────────

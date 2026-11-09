@@ -2,15 +2,6 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import AdminDashboardOverview from '@/Components/AdminDashboardOverview';
 import { Head, Link, usePage } from '@inertiajs/react';
 
-function IconMap() {
-    return (
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-            <circle cx="12" cy="10" r="3" />
-        </svg>
-    );
-}
-
 function IconUsers() {
     return (
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -69,21 +60,6 @@ function StudentQuickLinks() {
                     <p className="text-sm font-medium text-gray-900">Find Faculty</p>
                     <p className="mt-0.5 text-xs text-gray-500">
                         Browse all registered faculty members.
-                    </p>
-                </div>
-            </Link>
-
-            <Link
-                href={route('faculty.map')}
-                className="flex items-start gap-3.5 rounded-lg border border-gray-200 bg-white p-4 transition-colors hover:bg-gray-50"
-            >
-                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-md bg-gray-100 text-gray-600">
-                    <IconMap />
-                </div>
-                <div>
-                    <p className="text-sm font-medium text-gray-900">Faculty Map</p>
-                    <p className="mt-0.5 text-xs text-gray-500">
-                        See where faculty are on campus right now.
                     </p>
                 </div>
             </Link>

@@ -115,17 +115,6 @@ function FacultyCard({ member }) {
                     >
                         View Schedule
                     </Link>
-                    {hasLocation && (
-                        <>
-                            <span className="text-gray-300">·</span>
-                            <Link
-                                href={route('faculty.map')}
-                                className="inline-flex items-center gap-1 text-xs text-gray-400 underline underline-offset-2 hover:text-gray-700"
-                            >
-                                View on Map
-                            </Link>
-                        </>
-                    )}
                 </div>
             </div>
         </div>
@@ -162,13 +151,6 @@ export default function Directory({ faculty }) {
                             )}
                         </p>
                     </div>
-                    <Link
-                        href={route('faculty.map')}
-                        className="flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700 transition-colors hover:bg-gray-50"
-                    >
-                        <IconMap />
-                        View Map
-                    </Link>
                 </div>
             }
         >

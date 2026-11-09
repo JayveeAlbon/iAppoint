@@ -83,14 +83,6 @@ export default function FacultySchedule({ faculty, schedules, today }) {
                             </p>
                         )}
                     </div>
-                    {hasLocation && (
-                        <Link
-                            href={route('faculty.map')}
-                            className="flex flex-shrink-0 items-center gap-1.5 rounded-md border border-gray-200 px-3 py-1.5 text-xs text-gray-600 hover:bg-gray-50"
-                        >
-                            <IconMap /> View on Map
-                        </Link>
-                    )}
                 </div>
 
                 {/* Today's schedule highlight */}
