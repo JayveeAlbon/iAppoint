@@ -328,9 +328,11 @@ function Sidebar({ user, notifications }) {
                     <NavItem href={route('dashboard')} icon={<IconDashboard />} label="Dashboard" active={route().current('dashboard')} />
                 </NavSection>
 
-                <NavSection label="Faculty">
-                    <NavItem href={route('faculty.directory')} icon={<IconUsers />} label="Find Faculty" active={route().current('faculty.directory')} />
-                </NavSection>
+                {!isFaculty && (
+                    <NavSection label="Faculty">
+                        <NavItem href={route('faculty.directory')} icon={<IconUsers />} label="Find Faculty" active={route().current('faculty.directory')} />
+                    </NavSection>
+                )}
 
                 {!isAdmin && (
                     <NavSection label="Appointments">
@@ -347,7 +349,7 @@ function Sidebar({ user, notifications }) {
                 )}
 
                 <NavSection label="Community">
-                    {!isStudent && (
+                    {isAdmin && (
                         <NavItem
                             href={route('messages.index')}
                             icon={<IconMessage />}
