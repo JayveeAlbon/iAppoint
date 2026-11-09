@@ -3,7 +3,6 @@
 namespace App\Http\Middleware;
 
 use App\Models\Appointment;
-use App\Models\Friendship;
 use App\Models\User;
 use App\Models\UserFeedback;
 use App\Notifications\AppointmentApprovedForStudentNotification;
@@ -46,10 +45,6 @@ class HandleInertiaRequests extends Middleware
 
     private function buildNotifications(\App\Models\User $user): array
     {
-        $pendingFriends = Friendship::where('addressee_id', $user->id)
-            ->where('status', 'pending')
-            ->count();
-
         $unreadMessages = DB::table('conversation_participants as cp')
             ->join('messages as m', 'm.conversation_id', '=', 'cp.conversation_id')
             ->where('cp.user_id', $user->id)
@@ -82,14 +77,12 @@ class HandleInertiaRequests extends Middleware
                 ->count()
             : 0;
         $total = $unreadMessages
-            + ($user->isAdmin() ? 0 : $pendingFriends)
             + $newRegistrations
             + $approvedAppointments
             + $pendingAppointments
             + $pendingAdminFeedback;
 
         return [
-            'pending_friends'         => $pendingFriends,
             'unread_messages'         => $unreadMessages,
             'pending_faculty'         => $pendingFaculty,
             'pending_appointments'    => $pendingAppointments,

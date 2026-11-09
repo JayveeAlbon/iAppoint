@@ -10,7 +10,6 @@ use App\Http\Controllers\ConversationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FacultyController;
 use App\Http\Controllers\FacultyStatusController;
-use App\Http\Controllers\FriendController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ScheduleController;
@@ -58,12 +57,6 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/schedule', [ScheduleController::class, 'store'])->name('schedule.store');
     Route::put('/schedule/{schedule}', [ScheduleController::class, 'update'])->name('schedule.update');
     Route::delete('/schedule/{schedule}', [ScheduleController::class, 'destroy'])->name('schedule.destroy');
-
-    // ── Friends ───────────────────────────────────────────────────────────────
-    Route::get('/friends', [FriendController::class, 'index'])->name('friends.index');
-    Route::post('/friends', [FriendController::class, 'store'])->name('friends.store');
-    Route::patch('/friends/{friendship}', [FriendController::class, 'update'])->name('friends.update');
-    Route::delete('/friends/{friendship}', [FriendController::class, 'destroy'])->name('friends.destroy');
 
     // ── Conversations / Messages ──────────────────────────────────────────────
     Route::get('/messages', [ConversationController::class, 'index'])->name('messages.index');
