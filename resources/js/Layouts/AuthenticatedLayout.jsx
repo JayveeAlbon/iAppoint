@@ -309,6 +309,7 @@ function FacultyStatusDot({ status }) {
 function Sidebar({ user, notifications }) {
     const isAdmin   = user.role === 'admin';
     const isFaculty = user.role === 'faculty';
+    const isStudent = user.role === 'student';
 
     const roleLabel =
         isAdmin   ? 'Administrator' :
@@ -346,13 +347,15 @@ function Sidebar({ user, notifications }) {
                 )}
 
                 <NavSection label="Community">
-                    <NavItem
-                        href={route('messages.index')}
-                        icon={<IconMessage />}
-                        label="Messages"
-                        badge={unreadMessages}
-                        active={route().current('messages.*')}
-                    />
+                    {!isStudent && (
+                        <NavItem
+                            href={route('messages.index')}
+                            icon={<IconMessage />}
+                            label="Messages"
+                            badge={unreadMessages}
+                            active={route().current('messages.*')}
+                        />
+                    )}
                     <NavItem
                         href={route('notifications.index')}
                         icon={<IconBell />}
