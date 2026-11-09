@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Appointment;
 use App\Models\CateringSession;
-use App\Models\Meeting;
 use App\Models\Message;
 use App\Models\User;
 use App\Notifications\AppointmentApprovedForStudentNotification;
@@ -128,14 +127,6 @@ class DashboardController extends Controller
             'total'     => User::where('role', 'faculty')->count(),
         ];
 
-        $meetingStats = [
-            'total'     => Meeting::count(),
-            'scheduled' => Meeting::where('status', 'scheduled')->count(),
-            'ongoing'   => Meeting::where('status', 'ongoing')->count(),
-            'completed' => Meeting::where('status', 'completed')->count(),
-            'cancelled' => Meeting::where('status', 'cancelled')->count(),
-        ];
-
         $messageStats = [
             'total'        => Message::count(),
             'last_7_days'  => Message::where('created_at', '>=', now()->subDays(7))->count(),
@@ -181,7 +172,6 @@ class DashboardController extends Controller
             'reports' => [
                 'userCounts'        => $userCounts,
                 'locationStats'     => $locationStats,
-                'meetingStats'      => $meetingStats,
                 'messageStats'      => $messageStats,
                 'cateringStats'     => $cateringStats,
                 'registrationTrend' => $registrationTrend,

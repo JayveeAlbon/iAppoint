@@ -69,7 +69,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 // ── Admin dashboard overview ──────────────────────────────────────────────────
 
 export default function AdminDashboardOverview({
-    userCounts, locationStats, meetingStats,
+    userCounts, locationStats,
     messageStats, cateringStats, registrationTrend,
     messageTrend, topFaculty,
 }) {
@@ -87,14 +87,6 @@ export default function AdminDashboardOverview({
         { name: 'Suspended', value: userCounts.suspended, color: COLORS.suspended },
     ].filter(d => d.value > 0);
 
-    // Bar data — meetings
-    const meetingBar = [
-        { name: 'Scheduled', value: meetingStats.scheduled, fill: COLORS.scheduled },
-        { name: 'Ongoing',   value: meetingStats.ongoing,   fill: COLORS.ongoing   },
-        { name: 'Completed', value: meetingStats.completed, fill: COLORS.completed },
-        { name: 'Cancelled', value: meetingStats.cancelled, fill: COLORS.cancelled },
-    ];
-
     return (
         <div className="space-y-6">
             <p className="text-sm text-gray-500">Live system overview and analytics</p>
@@ -103,7 +95,6 @@ export default function AdminDashboardOverview({
                     <StatTile label="Total Users"    value={userCounts.total}        color="#1F2937" />
                     <StatTile label="Pending Approval" value={userCounts.pending}    color={COLORS.pending} />
                     <StatTile label="Total Messages" value={messageStats.total}      color={COLORS.messages} />
-                    <StatTile label="Total Meetings" value={meetingStats.total}      color={COLORS.student} />
                 </div>
 
                 {/* ── Donut charts row ─────────────────────────────────────── */}
@@ -198,23 +189,8 @@ export default function AdminDashboardOverview({
                     </ResponsiveContainer>
                 </Card>
 
-                {/* ── Bar chart + top faculty ──────────────────────────────── */}
-                <div className="grid gap-4 lg:grid-cols-2">
-                    <Card title="Meeting Status Breakdown">
-                        <ResponsiveContainer width="100%" height={200}>
-                            <BarChart data={meetingBar} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-                                <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#6B7280' }} />
-                                <YAxis tick={{ fontSize: 10, fill: '#9CA3AF' }} allowDecimals={false} />
-                                <Tooltip content={<CustomTooltip />} />
-                                <Bar dataKey="value" name="Count" radius={[4, 4, 0, 0]}>
-                                    {meetingBar.map((d, i) => <Cell key={i} fill={d.fill} />)}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </Card>
-
-                    <Card title="Top Faculty by Schedule Count">
+                {/* ── Top faculty ──────────────────────────────────────────── */}
+                <Card title="Top Faculty by Schedule Count">
                         {topFaculty.length === 0 ? (
                             <p className="py-4 text-sm text-gray-400">No faculty with schedules yet.</p>
                         ) : (
@@ -238,7 +214,6 @@ export default function AdminDashboardOverview({
                             </div>
                         )}
                     </Card>
-                </div>
 
                 {/* ── Location + Catering row ──────────────────────────────── */}
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

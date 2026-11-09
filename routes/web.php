@@ -11,7 +11,6 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FacultyController;
 use App\Http\Controllers\FacultyStatusController;
 use App\Http\Controllers\FriendController;
-use App\Http\Controllers\MeetingController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ScheduleController;
@@ -71,14 +70,6 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/messages', [ConversationController::class, 'store'])->name('messages.store');
     Route::get('/messages/{conversation}', [ConversationController::class, 'show'])->name('messages.show');
     Route::post('/messages/{conversation}/send', [ConversationController::class, 'sendMessage'])->name('messages.send');
-
-    // ── Meetings ──────────────────────────────────────────────────────────────
-    Route::get('/meetings', [MeetingController::class, 'index'])->name('meetings.index');
-    Route::post('/meetings', [MeetingController::class, 'store'])->name('meetings.store');
-    Route::get('/meetings/{meeting}', [MeetingController::class, 'show'])->name('meetings.show');
-    Route::patch('/meetings/{meeting}/status', [MeetingController::class, 'update'])->name('meetings.status');
-    Route::patch('/meetings/{meeting}/respond', [MeetingController::class, 'respond'])->name('meetings.respond');
-    Route::delete('/meetings/{meeting}', [MeetingController::class, 'destroy'])->name('meetings.destroy');
 
     // ── Appointments ─────────────────────────────────────────────────────────
     Route::get('/appointments', [AppointmentController::class, 'index'])->name('appointments.index');
