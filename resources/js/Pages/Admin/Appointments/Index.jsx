@@ -96,11 +96,20 @@ function ActionModal({ appointment, action, onClose }) {
                         <button
                             type="submit"
                             disabled={processing}
-                            className={`flex-1 rounded-lg py-2.5 text-sm font-medium text-white disabled:opacity-50 ${
+                            className={`flex-1 inline-flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium text-white disabled:opacity-50 ${
                                 action === 'approve' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-500 hover:bg-red-600'
                             }`}
                         >
-                            {action === 'approve' ? 'Approve' : 'Reject'}
+                            {processing && (
+                                <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+                                </svg>
+                            )}
+                            {processing
+                                ? (action === 'approve' ? 'Approving…' : 'Rejecting…')
+                                : (action === 'approve' ? 'Approve' : 'Reject')
+                            }
                         </button>
                     </div>
                 </form>
@@ -156,14 +165,20 @@ function AppointmentRow({ appt, onAction }) {
                     <div className="flex gap-1.5">
                         <button
                             onClick={() => onAction(appt, 'approve')}
-                            className="rounded-md bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700 hover:bg-green-100"
+                            className="inline-flex items-center gap-1 rounded-md bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700 hover:bg-green-100 active:scale-95 transition-transform"
                         >
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
                             Approve
                         </button>
                         <button
                             onClick={() => onAction(appt, 'reject')}
-                            className="rounded-md bg-red-50 px-2.5 py-1 text-xs font-medium text-red-500 hover:bg-red-100"
+                            className="inline-flex items-center gap-1 rounded-md bg-red-50 px-2.5 py-1 text-xs font-medium text-red-500 hover:bg-red-100 active:scale-95 transition-transform"
                         >
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
                             Reject
                         </button>
                     </div>
