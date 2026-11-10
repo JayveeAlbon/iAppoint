@@ -11,11 +11,14 @@ class AppointmentApprovedForStudentNotification extends Notification
 {
     use Queueable;
 
-    public function __construct(public readonly Appointment $appointment) {}
+    public function __construct(
+        public readonly Appointment $appointment,
+        private array $channels = ['database', 'mail'],
+    ) {}
 
     public function via(object $notifiable): array
     {
-        return ['database', 'mail'];
+        return $this->channels;
     }
 
     public function toArray(object $notifiable): array

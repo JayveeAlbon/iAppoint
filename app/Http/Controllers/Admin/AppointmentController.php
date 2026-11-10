@@ -65,18 +65,34 @@ class AppointmentController extends Controller
 
         $appointment->loadMissing(['student', 'faculty']);
 
-        // Send in-app (database) notification — never wrapped in try/catch
-        // so errors surface and we can debug them
+        // ── 1. Store in-app (database) notifications — always first, no mail ─
         if ($appointment->student) {
             $appointment->student->notify(
-                new AppointmentApprovedForStudentNotification($appointment)
+                new AppointmentApprovedForStudentNotification($appointment, ['database'])
+            );
+        }
+        if ($appointment->faculty) {
+            $appointment->faculty->notify(
+                new AppointmentApprovedForFacultyNotification($appointment, ['database'])
             );
         }
 
-        if ($appointment->faculty) {
-            $appointment->faculty->notify(
-                new AppointmentApprovedForFacultyNotification($appointment)
-            );
+        // ── 2. Send email — wrapped so failure never blocks in-app notif ──────
+        try {
+            if ($appointment->student?->email) {
+                $appointment->student->notify(
+                    new AppointmentApprovedForStudentNotification($appointment, ['mail'])
+                );
+            }
+            if ($appointment->faculty?->email) {
+                $appointment->faculty->notify(
+                    new AppointmentApprovedForFacultyNotification($appointment, ['mail'])
+                );
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Approval email failed: ' . $e->getMessage(), [
+                'appointment_id' => $appointment->id,
+            ]);
         }
 
         return back()->with('success', 'Appointment approved. Notifications sent to student and faculty.');
