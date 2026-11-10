@@ -63,28 +63,23 @@ class AppointmentController extends Controller
             'faculty' => $appointment->faculty->name ?? null,
         ]);
 
-        $this->notifyApproval($appointment);
-
-        return back()->with('success', 'Appointment approved. Notifications sent to student and faculty.');
-    }
-
-    private function notifyApproval(Appointment $appointment): void
-    {
         $appointment->loadMissing(['student', 'faculty']);
 
-        try {
-            if ($appointment->student?->email) {
-                $appointment->student->notify(new AppointmentApprovedForStudentNotification($appointment));
-            }
-            if ($appointment->faculty?->email) {
-                $appointment->faculty->notify(new AppointmentApprovedForFacultyNotification($appointment));
-            }
-        } catch (\Throwable $e) {
-            // Never let mail failures break the admin flow — log and continue.
-            Log::warning('appointment approval mail failed: ' . $e->getMessage(), [
-                'appointment_id' => $appointment->id,
-            ]);
+        // Send in-app (database) notification — never wrapped in try/catch
+        // so errors surface and we can debug them
+        if ($appointment->student) {
+            $appointment->student->notify(
+                new AppointmentApprovedForStudentNotification($appointment)
+            );
         }
+
+        if ($appointment->faculty) {
+            $appointment->faculty->notify(
+                new AppointmentApprovedForFacultyNotification($appointment)
+            );
+        }
+
+        return back()->with('success', 'Appointment approved. Notifications sent to student and faculty.');
     }
 
     public function reject(Request $request, Appointment $appointment): RedirectResponse
