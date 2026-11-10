@@ -5,7 +5,9 @@ namespace App\Http\Middleware;
 use App\Models\Appointment;
 use App\Models\User;
 use App\Models\UserFeedback;
+use App\Notifications\AppointmentApprovedForFacultyNotification;
 use App\Notifications\AppointmentApprovedForStudentNotification;
+use App\Notifications\AppointmentReminderNotification;
 use App\Notifications\UserRegisteredInAppNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -66,30 +68,46 @@ class HandleInertiaRequests extends Middleware
         $pendingAdminFeedback = $user->isAdmin()
             ? UserFeedback::where('status', 'open')->count()
             : 0;
+
         $newRegistrations = $user->isAdmin()
             ? $user->unreadNotifications()
                 ->where('type', UserRegisteredInAppNotification::class)
                 ->count()
             : 0;
+
+        // Student: unread approved appointment notifications
         $approvedAppointments = $user->isStudent()
             ? $user->unreadNotifications()
                 ->where('type', AppointmentApprovedForStudentNotification::class)
                 ->count()
             : 0;
+
+        // Faculty: unread appointment + reminder notifications
+        $facultyAppointmentNotifs = $user->isFaculty()
+            ? $user->unreadNotifications()
+                ->whereIn('type', [
+                    AppointmentApprovedForFacultyNotification::class,
+                    AppointmentReminderNotification::class,
+                ])
+                ->count()
+            : 0;
+
         $total = $unreadMessages
             + $newRegistrations
             + $approvedAppointments
+            + $facultyAppointmentNotifs
             + $pendingAppointments
             + $pendingAdminFeedback;
 
         return [
-            'unread_messages'         => $unreadMessages,
-            'pending_faculty'         => $pendingFaculty,
-            'pending_appointments'    => $pendingAppointments,
-            'pending_admin_feedback'  => $pendingAdminFeedback,
-            'new_registrations'       => $newRegistrations,
-            'approved_appointments'   => $approvedAppointments,
-            'total'                   => $total,
+            'unread_messages'              => $unreadMessages,
+            'pending_faculty'              => $pendingFaculty,
+            'pending_appointments'         => $pendingAppointments,
+            'pending_admin_feedback'       => $pendingAdminFeedback,
+            'new_registrations'            => $newRegistrations,
+            'approved_appointments'        => $approvedAppointments,
+            'faculty_appointment_notifs'   => $facultyAppointmentNotifs,
+            'total'                        => $total,
         ];
     }
 }
