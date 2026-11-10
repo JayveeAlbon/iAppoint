@@ -247,7 +247,7 @@ function CreateModal({ faculty, onClose }) {
             <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
                 <h3 className="mb-4 text-base font-semibold text-gray-900">Request Appointment</h3>
                 <p className="mb-4 text-xs text-gray-500">
-                    Your appointment will be confirmed automatically and both you and the faculty will be notified.
+                    Your request will be reviewed by the admin before it is confirmed.
                 </p>
 
                 <form onSubmit={submit} className="space-y-3">
@@ -400,7 +400,7 @@ function CreateModal({ faculty, onClose }) {
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
                                 </svg>
                             )}
-                            {processing ? 'Booking…' : 'Book Appointment'}
+                            {processing ? 'Submitting…' : 'Submit Request'}
                         </button>
                     </div>
                 </form>

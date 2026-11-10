@@ -4,11 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Appointment;
 use App\Models\User;
-use App\Notifications\AppointmentApprovedForFacultyNotification;
-use App\Notifications\AppointmentApprovedForStudentNotification;
+use App\Notifications\AppointmentRequestedNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -73,48 +72,39 @@ class AppointmentController extends Controller
             'requested_at' => 'required|date|after:now',
         ]);
 
-        // Auto-approve: create appointment as approved immediately
         $data['student_id'] = $user->id;
-        $data['status']     = 'approved';
-        $data['approved_at'] = now();
-
         $appointment = Appointment::create($data);
 
-        // Notify both student and faculty immediately
-        $this->notifyApproval($appointment);
+        $this->notifyAdmins($appointment);
 
-        return back()->with('success', 'Appointment confirmed! A notification has been sent to you and the faculty.');
+        return back()->with('success', 'Appointment request submitted. Awaiting admin approval.');
     }
 
-    private function notifyApproval(Appointment $appointment): void
+    private function notifyAdmins(Appointment $appointment): void
     {
-        $appointment->loadMissing(['student', 'faculty']);
+        $recipients = User::where('role', 'admin')
+            ->where('status', 'active')
+            ->whereNotNull('email')
+            ->get();
 
-        try {
-            if ($appointment->student?->email) {
-                $appointment->student->notify(
-                    new AppointmentApprovedForStudentNotification($appointment)
-                );
-            }
-            if ($appointment->faculty?->email) {
-                $appointment->faculty->notify(
-                    new AppointmentApprovedForFacultyNotification($appointment)
-                );
-            }
-        } catch (\Throwable $e) {
-            Log::warning('Appointment notification failed: ' . $e->getMessage(), [
-                'appointment_id' => $appointment->id,
-            ]);
+        $configured = config('services.admin_notify_email') ?: env('ADMIN_NOTIFY_EMAIL');
+        if ($configured) {
+            Notification::route('mail', $configured)
+                ->notify(new AppointmentRequestedNotification($appointment));
+        }
+
+        if ($recipients->isNotEmpty()) {
+            Notification::send($recipients, new AppointmentRequestedNotification($appointment));
         }
     }
 
     public function destroy(Request $request, Appointment $appointment): RedirectResponse
     {
         abort_if($appointment->student_id !== $request->user()->id, 403);
-        abort_if($appointment->status === 'completed', 422);
+        abort_if($appointment->status === 'approved', 422);
 
         $appointment->delete();
 
-        return back()->with('success', 'Appointment cancelled.');
+        return back()->with('success', 'Appointment request cancelled.');
     }
 }
