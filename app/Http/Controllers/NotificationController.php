@@ -3,9 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Appointment;
-use App\Models\Friendship;
 use App\Models\UserFeedback;
+use App\Notifications\AppointmentApprovedForFacultyNotification;
 use App\Notifications\AppointmentApprovedForStudentNotification;
+use App\Notifications\AppointmentReminderNotification;
 use App\Notifications\UserRegisteredInAppNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -22,56 +23,122 @@ class NotificationController extends Controller
         $items = collect();
 
         if (! $user->isAdmin()) {
-            Friendship::with('requester:id,name')
-                ->where('addressee_id', $user->id)
-                ->where('status', 'pending')
-                ->latest()
-                ->limit(50)
-                ->get()
-                ->each(function (Friendship $friendship) use ($items): void {
-                    $name = $friendship->requester?->name ?? 'Someone';
+
+            // ── Student: appointment approved notifications ─────────────────
+            if ($user->isStudent()) {
+                $studentNotifs = $user->notifications()
+                    ->where('type', AppointmentApprovedForStudentNotification::class)
+                    ->latest()
+                    ->limit(100)
+                    ->get();
+
+                $studentNotifs->whereNull('read_at')->each->markAsRead();
+
+                $studentNotifs->each(function ($notification) use ($items): void {
+                    $data = $notification->data;
                     $items->push([
-                        'id' => 'friendship-'.$friendship->id,
-                        'type' => 'Friend request',
-                        'title' => "Friend request from {$name}",
-                        'description' => "{$name} wants to connect with you.",
-                        'created_at' => $friendship->created_at,
-                        'href' => route('friends.index'),
+                        'id'          => 'appointment-approved-'.$notification->id,
+                        'type'        => 'Appointment approved',
+                        'title'       => 'Your appointment was approved',
+                        'description' => sprintf(
+                            '%s with %s on %s.',
+                            $data['title'] ?? 'Appointment',
+                            $data['faculty_name'] ?? 'your faculty member',
+                            isset($data['requested_at'])
+                                ? Carbon::parse($data['requested_at'])->format('M j, Y g:i A')
+                                : 'the scheduled date',
+                        ),
+                        'created_at' => $notification->created_at,
+                        'href'       => route('appointments.index'),
                     ]);
                 });
+            }
 
-            $appointmentUpdates = $user->notifications()
-                ->where('type', AppointmentApprovedForStudentNotification::class)
-                ->latest()
-                ->limit(100)
-                ->get();
+            // ── Faculty: appointment approved notifications ─────────────────
+            if ($user->isFaculty()) {
+                $facultyNotifs = $user->notifications()
+                    ->whereIn('type', [
+                        AppointmentApprovedForFacultyNotification::class,
+                        AppointmentReminderNotification::class,
+                    ])
+                    ->latest()
+                    ->limit(100)
+                    ->get();
 
-            $appointmentUpdates
-                ->whereNull('read_at')
-                ->each
-                ->markAsRead();
+                $facultyNotifs->whereNull('read_at')->each->markAsRead();
 
-            $appointmentUpdates->each(function ($notification) use ($items): void {
-                $data = $notification->data;
+                $facultyNotifs->each(function ($notification) use ($items): void {
+                    $data = $notification->data;
+                    $isReminder = $notification->type === AppointmentReminderNotification::class;
 
-                $items->push([
-                    'id' => 'appointment-approved-'.$notification->id,
-                    'type' => 'Appointment approved',
-                    'title' => 'Your appointment was approved',
-                    'description' => sprintf(
-                        '%s with %s on %s.',
-                        $data['title'] ?? 'Appointment',
-                        $data['faculty_name'] ?? 'your faculty member',
-                        isset($data['requested_at'])
-                            ? Carbon::parse($data['requested_at'])->format('M j, Y g:i A')
-                            : 'the scheduled date',
-                    ),
-                    'created_at' => $notification->created_at,
-                    'href' => route('appointments.index'),
-                ]);
-            });
+                    if ($isReminder) {
+                        $timeLabel = ($data['type'] ?? '24h') === '1h' ? 'in 1 hour' : 'tomorrow';
+                        $items->push([
+                            'id'          => 'reminder-'.$notification->id,
+                            'type'        => 'Appointment reminder',
+                            'title'       => "Reminder: Appointment {$timeLabel}",
+                            'description' => sprintf(
+                                '%s is scheduled for %s.',
+                                $data['title'] ?? 'Your appointment',
+                                isset($data['requested_at'])
+                                    ? Carbon::parse($data['requested_at'])->format('M j, Y g:i A')
+                                    : 'the scheduled date',
+                            ),
+                            'created_at' => $notification->created_at,
+                            'href'       => route('appointments.index'),
+                        ]);
+                    } else {
+                        $items->push([
+                            'id'          => 'appt-faculty-'.$notification->id,
+                            'type'        => 'Appointment confirmed',
+                            'title'       => 'New appointment confirmed',
+                            'description' => sprintf(
+                                '%s with student %s on %s.',
+                                $data['title'] ?? 'Appointment',
+                                $data['student_name'] ?? 'a student',
+                                isset($data['requested_at'])
+                                    ? Carbon::parse($data['requested_at'])->format('M j, Y g:i A')
+                                    : 'the scheduled date',
+                            ),
+                            'created_at' => $notification->created_at,
+                            'href'       => route('appointments.index'),
+                        ]);
+                    }
+                });
+            }
+
+            // ── Student: reminder notifications ────────────────────────────
+            if ($user->isStudent()) {
+                $reminderNotifs = $user->notifications()
+                    ->where('type', AppointmentReminderNotification::class)
+                    ->latest()
+                    ->limit(50)
+                    ->get();
+
+                $reminderNotifs->whereNull('read_at')->each->markAsRead();
+
+                $reminderNotifs->each(function ($notification) use ($items): void {
+                    $data = $notification->data;
+                    $timeLabel = ($data['type'] ?? '24h') === '1h' ? 'in 1 hour' : 'tomorrow';
+                    $items->push([
+                        'id'          => 'reminder-'.$notification->id,
+                        'type'        => 'Appointment reminder',
+                        'title'       => "Reminder: Appointment {$timeLabel}",
+                        'description' => sprintf(
+                            '%s is scheduled for %s.',
+                            $data['title'] ?? 'Your appointment',
+                            isset($data['requested_at'])
+                                ? Carbon::parse($data['requested_at'])->format('M j, Y g:i A')
+                                : 'the scheduled date',
+                        ),
+                        'created_at' => $notification->created_at,
+                        'href'       => route('appointments.index'),
+                    ]);
+                });
+            }
         }
 
+        // ── Unread messages (all roles) ────────────────────────────────────
         DB::table('conversation_participants as cp')
             ->join('messages as m', 'm.conversation_id', '=', 'cp.conversation_id')
             ->join('users as sender', 'sender.id', '=', 'm.sender_id')
@@ -92,15 +159,16 @@ class NotificationController extends Controller
             ->get()
             ->each(function ($message) use ($items): void {
                 $items->push([
-                    'id' => 'message-'.$message->id,
-                    'type' => 'Unread message',
-                    'title' => "Message from {$message->sender_name}",
+                    'id'          => 'message-'.$message->id,
+                    'type'        => 'Unread message',
+                    'title'       => "Message from {$message->sender_name}",
                     'description' => Str::limit(trim($message->body), 140),
-                    'created_at' => Carbon::parse($message->created_at),
-                    'href' => route('messages.show', $message->conversation_id),
+                    'created_at'  => Carbon::parse($message->created_at),
+                    'href'        => route('messages.show', $message->conversation_id),
                 ]);
             });
 
+        // ── Admin notifications ────────────────────────────────────────────
         if ($user->isAdmin()) {
             $registrations = $user->notifications()
                 ->where('type', UserRegisteredInAppNotification::class)
@@ -108,10 +176,7 @@ class NotificationController extends Controller
                 ->limit(100)
                 ->get();
 
-            $registrations
-                ->whereNull('read_at')
-                ->each
-                ->markAsRead();
+            $registrations->whereNull('read_at')->each->markAsRead();
 
             $registrations->each(function ($notification) use ($items): void {
                 $data = $notification->data;
@@ -120,9 +185,9 @@ class NotificationController extends Controller
                 $role = ucfirst($registeredRole);
 
                 $items->push([
-                    'id' => 'registration-'.$notification->id,
-                    'type' => 'New registration',
-                    'title' => 'New account registered',
+                    'id'          => 'registration-'.$notification->id,
+                    'type'        => 'New registration',
+                    'title'       => 'New account registered',
                     'description' => sprintf(
                         '%s (%s) registered as %s.',
                         $name,
@@ -130,9 +195,9 @@ class NotificationController extends Controller
                         $role,
                     ),
                     'created_at' => $notification->created_at,
-                    'href' => route('admin.users.index', array_filter([
-                        'q' => $data['email'] ?? null,
-                        'role' => $registeredRole,
+                    'href'       => route('admin.users.index', array_filter([
+                        'q'      => $data['email'] ?? null,
+                        'role'   => $registeredRole,
                         'status' => $registeredRole === 'faculty' ? 'pending' : null,
                     ])),
                 ]);
@@ -145,9 +210,9 @@ class NotificationController extends Controller
                 ->get()
                 ->each(function (Appointment $appointment) use ($items): void {
                     $items->push([
-                        'id' => 'appointment-'.$appointment->id,
-                        'type' => 'Pending appointment',
-                        'title' => 'Appointment request',
+                        'id'          => 'appointment-'.$appointment->id,
+                        'type'        => 'Pending appointment',
+                        'title'       => 'Appointment request',
                         'description' => sprintf(
                             '%s requested an appointment with %s: %s',
                             $appointment->student?->name ?? 'A student',
@@ -155,7 +220,7 @@ class NotificationController extends Controller
                             $appointment->title,
                         ),
                         'created_at' => $appointment->created_at,
-                        'href' => route('admin.appointments.index'),
+                        'href'       => route('admin.appointments.index'),
                     ]);
                 });
 
@@ -166,16 +231,16 @@ class NotificationController extends Controller
                 ->get()
                 ->each(function (UserFeedback $feedback) use ($items): void {
                     $items->push([
-                        'id' => 'feedback-'.$feedback->id,
-                        'type' => 'Open feedback',
-                        'title' => 'New feedback',
+                        'id'          => 'feedback-'.$feedback->id,
+                        'type'        => 'Open feedback',
+                        'title'       => 'New feedback',
                         'description' => sprintf(
                             '%s submitted feedback: %s',
                             $feedback->user?->name ?? 'A user',
                             $feedback->subject,
                         ),
                         'created_at' => $feedback->created_at,
-                        'href' => route('admin.feedback.index'),
+                        'href'       => route('admin.feedback.index'),
                     ]);
                 });
         }

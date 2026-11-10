@@ -15,7 +15,21 @@ class AppointmentApprovedForFacultyNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        return ['mail'];
+        return ['database', 'mail'];
+    }
+
+    public function toArray(object $notifiable): array
+    {
+        $a = $this->appointment->loadMissing(['student']);
+
+        return [
+            'event'          => 'appointment.approved',
+            'appointment_id' => $a->id,
+            'title'          => $a->title,
+            'student_name'   => $a->student?->name,
+            'requested_at'   => $a->requested_at?->toIso8601String(),
+            'admin_notes'    => $a->admin_notes,
+        ];
     }
 
     public function toMail(object $notifiable): MailMessage
@@ -31,12 +45,12 @@ class AppointmentApprovedForFacultyNotification extends Notification
         return (new MailMessage)
             ->subject('[iAppoint] New confirmed appointment with a student')
             ->greeting("Hello {$notifiable->name},")
-            ->line('An appointment involving you has been approved. You have a new confirmed meeting to attend.')
+            ->line('An appointment involving you has been approved by the administrator.')
             ->line("**Subject:** {$a->title}")
             ->line("**With student:** {$studentLabel}")
             ->line("**Scheduled for:** {$when}")
             ->when($a->message, fn ($m) => $m->line("**Student's message:** " . $a->message))
             ->action('View My Appointments', url('/appointments'))
-            ->line('Please prepare accordingly. You can update your availability from the Schedule page.');
+            ->line('Please prepare accordingly.');
     }
 }
