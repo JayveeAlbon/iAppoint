@@ -13,39 +13,6 @@ function IconUsers() {
     );
 }
 
-function FacultyStatusCard({ user }) {
-    const hasLocation = user.latitude !== null && user.latitude !== undefined;
-    const hasConsent = !!user.location_consent_at;
-
-    return (
-        <div className="overflow-hidden rounded-lg border border-gray-200 bg-white">
-            <div className="border-b border-gray-100 px-5 py-3.5">
-                <p className="text-sm font-medium text-gray-900">Location Sharing</p>
-                <p className="mt-0.5 text-xs text-gray-500">
-                    Your location is automatically shared while you are logged in.
-                </p>
-            </div>
-            <div className="flex items-center gap-3 px-5 py-4">
-                <div className={`h-2.5 w-2.5 flex-shrink-0 rounded-full ${hasLocation ? 'bg-green-500' : hasConsent ? 'bg-yellow-400' : 'bg-gray-300'}`} />
-                <p className="text-sm text-gray-700">
-                    {hasLocation ? (
-                        <>
-                            Active —{' '}
-                            <span className="font-mono text-xs text-gray-400">
-                                {parseFloat(user.latitude).toFixed(5)}, {parseFloat(user.longitude).toFixed(5)}
-                            </span>
-                        </>
-                    ) : hasConsent ? (
-                        'Waiting for GPS signal…'
-                    ) : (
-                        'Pending your agreement to location terms.'
-                    )}
-                </p>
-            </div>
-        </div>
-    );
-}
-
 function StudentQuickLinks() {
     return (
         <div className="grid gap-3 sm:grid-cols-2">
@@ -290,8 +257,6 @@ function FacultyDashboard({ user, stats, upcomingAppts }) {
                 </div>
             )}
 
-            {/* Location sharing card */}
-            <FacultyStatusCard user={user} />
         </div>
     );
 }

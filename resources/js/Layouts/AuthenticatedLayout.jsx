@@ -295,17 +295,6 @@ function UserDropdown({ user }) {
 
 // ── Sidebar ────────────────────────────────────────────────────────────────────
 
-function FacultyStatusDot({ status }) {
-    if (!status) return null;
-    const isBusy = status.status === 'busy';
-    return (
-        <span
-            className={`inline-block h-2 w-2 rounded-full ${isBusy ? 'bg-amber-400' : 'bg-green-500'}`}
-            title={isBusy ? `Busy — catering ${status.catering_count}` : 'Available'}
-        />
-    );
-}
-
 function Sidebar({ user, notifications }) {
     const isAdmin   = user.role === 'admin';
     const isFaculty = user.role === 'faculty';
@@ -393,7 +382,6 @@ function Sidebar({ user, notifications }) {
                         <p className="truncate text-xs font-medium text-white">{user.name}</p>
                         <div className="flex items-center gap-1.5">
                             <p className="truncate text-[10px] text-white/60">{roleLabel}</p>
-                            {isFaculty && <FacultyStatusDot status={user.faculty_status} />}
                         </div>
                     </div>
                 </div>
@@ -401,95 +389,6 @@ function Sidebar({ user, notifications }) {
         </aside>
     );
 }
-
-// ── Location consent T&C modal (faculty only) ─────────────────────────────────
-
-function ConsentModal() {
-    const [dismissed, setDismissed] = useState(false);
-    if (dismissed) return null;
-
-    return (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center">
-            <div className="w-full max-w-md rounded-t-2xl bg-white p-6 shadow-2xl sm:rounded-2xl">
-                <div className="mb-1 flex items-center gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
-                        </svg>
-                    </div>
-                    <h2 className="text-base font-semibold text-gray-900">Location Sharing Agreement</h2>
-                </div>
-
-                <p className="mb-3 text-xs text-gray-400">Southern Christian College — iAppoint</p>
-                <p className="mb-3 text-sm text-gray-600">
-                    To help students find you on campus, iAppoint needs permission to share your GPS location while you are logged in.
-                </p>
-
-                <ul className="mb-4 space-y-2">
-                    {[
-                        'Your location is only visible to registered iAppoint users.',
-                        'Location sharing runs automatically while you are logged in.',
-                        'Sharing stops as soon as you log out.',
-                        'You can revoke this permission anytime from your Profile.',
-                    ].map(item => (
-                        <li key={item} className="flex items-start gap-2 text-sm text-gray-500">
-                            <svg className="mt-0.5 flex-shrink-0 text-gray-400" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="20 6 9 17 4 12" />
-                            </svg>
-                            {item}
-                        </li>
-                    ))}
-                </ul>
-
-                <div className="flex gap-2">
-                    <button onClick={() => setDismissed(true)} className="flex-1 rounded-lg border border-gray-200 py-2.5 text-sm text-gray-600 hover:bg-gray-50">
-                        Not Now
-                    </button>
-                    <button
-                        onClick={() => router.post(route('faculty.consent'), {}, { preserveScroll: true })}
-                        className="flex-1 rounded-lg bg-gray-900 py-2.5 text-sm font-medium text-white hover:bg-gray-700"
-                    >
-                        Agree &amp; Enable
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-// ── GPS watcher ────────────────────────────────────────────────────────────────
-
-function useLocationWatcher(user) {
-    const lastSent = useRef(0);
-
-    useEffect(() => {
-        if (user.role !== 'faculty' || !user.location_consent_at) return;
-        if (!navigator?.geolocation) return;
-
-        const watchId = navigator.geolocation.watchPosition(
-            (pos) => {
-                const now = Date.now();
-                if (now - lastSent.current < 30_000) return;
-                lastSent.current = now;
-                const csrf = document.head.querySelector('meta[name="csrf-token"]')?.content ?? '';
-                fetch('/faculty/location', {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': csrf,
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                    body: JSON.stringify({ latitude: pos.coords.latitude, longitude: pos.coords.longitude }),
-                }).catch(() => {});
-            },
-            () => {},
-            { enableHighAccuracy: true, maximumAge: 15_000, timeout: 10_000 },
-        );
-
-        return () => navigator.geolocation.clearWatch(watchId);
-    }, [user.role, user.location_consent_at]);
-}
-
 
 // ── Main layout ────────────────────────────────────────────────────────────────
 
@@ -500,14 +399,8 @@ export default function AuthenticatedLayout({ header, children }) {
     const user = auth.user;
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
-    const needsConsent = user.role === 'faculty' && !user.location_consent_at;
-
-    useLocationWatcher(user);
-
     return (
         <div className="flex h-screen overflow-hidden bg-gray-50">
-            {needsConsent && <ConsentModal />}
-
             {/* Mobile overlay */}
             {sidebarOpen && (
                 <div className="fixed inset-0 z-20 bg-black/20 lg:hidden" onClick={() => setSidebarOpen(false)} />
