@@ -349,15 +349,6 @@ function Sidebar({ user, notifications }) {
                 )}
 
                 <NavSection label="Community">
-                    {isAdmin && (
-                        <NavItem
-                            href={route('messages.index')}
-                            icon={<IconMessage />}
-                            label="Messages"
-                            badge={unreadMessages}
-                            active={route().current('messages.*')}
-                        />
-                    )}
                     <NavItem
                         href={route('notifications.index')}
                         icon={<IconBell />}
