@@ -348,37 +348,37 @@ function Sidebar({ user, notifications }) {
                     </NavSection>
                 )}
 
-                <NavSection label="Community">
-                    <NavItem
-                        href={route('notifications.index')}
-                        icon={<IconBell />}
-                        label="Notifications"
-                        badge={notifications?.total ?? 0}
-                        active={route().current('notifications.*')}
-                    />
-                    {!isAdmin && (
+                {!isAdmin && (
+                    <NavSection label="Community">
+                        <NavItem
+                            href={route('notifications.index')}
+                            icon={<IconBell />}
+                            label="Notifications"
+                            badge={notifications?.total ?? 0}
+                            active={route().current('notifications.*')}
+                        />
                         <NavItem
                             icon={<IconMessageSquare />}
                             label="Feedback"
                             onClick={() => window.dispatchEvent(new Event('open-feedback'))}
                         />
-                    )}
-                    {isFaculty && (
-                        <NavItem
-                            href={route('faculty-status.index')}
-                            icon={<IconActivity />}
-                            label="My Status"
-                            active={route().current('faculty-status.*')}
-                        />
-                    )}
-                </NavSection>
+                        {isFaculty && (
+                            <NavItem
+                                href={route('faculty-status.index')}
+                                icon={<IconActivity />}
+                                label="My Status"
+                                active={route().current('faculty-status.*')}
+                            />
+                        )}
+                    </NavSection>
+                )}
 
                 {isAdmin && (
                     <NavSection label="Administration">
                         <NavItem href={route('admin.users.index')}        icon={<IconUsers />}    label="Users"        badge={notifications?.pending_faculty ?? 0} active={route().current('admin.users.*')} />
                         <NavItem href={route('admin.appointments.index')} icon={<IconCalendar />} label="Appointments" badge={notifications?.pending_appointments ?? 0} active={route().current('admin.appointments.*')} />
                         <NavItem href={route('admin.feedback.index')}     icon={<IconMessage />}  label="Feedback"     badge={notifications?.pending_admin_feedback ?? 0} active={route().current('admin.feedback.*')} />
-                        <NavItem href={route('notifications.index')}      icon={<IconBell />}     label="Notifications" badge={notifications?.total ?? 0}                      active={route().current('notifications.*')} />
+                        <NavItem href={route('notifications.index')}      icon={<IconBell />}     label="Notifications" badge={notifications?.total ?? 0} active={route().current('notifications.*')} />
                         <NavItem href={route('admin.audit.index')}        icon={<IconFileText />} label="History"      active={route().current('admin.audit.*')} />
                         <NavItem href={route('admin.settings.index')}     icon={<IconSettings />} label="Settings"     active={route().current('admin.settings.*')} />
                     </NavSection>
