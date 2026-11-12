@@ -195,6 +195,32 @@ function fmt12(time) {
     return `${h12}:${String(m).padStart(2,'0')} ${ampm}`;
 }
 
+/** Returns next N occurrences of a weekday as YYYY-MM-DD, starting from tomorrow */
+function getUpcomingDatesForDay(dayName, count = 4) {
+    const idx = DAYS.indexOf(dayName);
+    const jsDay = (idx + 1) % 7;
+    const dates = [];
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    d.setHours(0, 0, 0, 0);
+    while (dates.length < count) {
+        if (d.getDay() === jsDay) {
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            dates.push(`${year}-${month}-${day}`);
+        }
+        d.setDate(d.getDate() + 1);
+    }
+    return dates;
+}
+
+/** Format YYYY-MM-DD to "Mon, Nov 11" */
+function formatDateLabel(dateStr) {
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
 // ── Create Appointment Modal ───────────────────────────────────────────────────
 
 function CreateModal({ faculty, onClose }) {
@@ -206,6 +232,7 @@ function CreateModal({ faculty, onClose }) {
     });
 
     const [selectedDay,  setSelectedDay]  = useState(null);
+    const [selectedDate, setSelectedDate] = useState(null);
     const [selectedSlot, setSelectedSlot] = useState(null);
 
     function submit(e) {
@@ -223,19 +250,21 @@ function CreateModal({ faculty, onClose }) {
     function handleFacultyChange(e) {
         setData('faculty_id', e.target.value);
         setSelectedDay(null);
+        setSelectedDate(null);
         setSelectedSlot(null);
         setData('requested_at', '');
     }
 
     function handleDaySelect(day) {
         setSelectedDay(day);
+        setSelectedDate(null);
         setSelectedSlot(null);
         setData('requested_at', '');
     }
 
     function handleSlotSelect(slot) {
         setSelectedSlot(slot.id);
-        const date = nextDateForDay(slot.day);
+        const date = selectedDate || nextDateForDay(slot.day);
         const time = slot.start_time.slice(0, 5);
         setData('requested_at', `${date}T${time}`);
     }
@@ -324,9 +353,37 @@ function CreateModal({ faculty, onClose }) {
                                     </div>
 
                                     {selectedDay && (
-                                        <div className="space-y-1.5">
+                                        <div className="space-y-3">
+                                            {/* Date picker */}
+                                            <div>
+                                                <p className="mb-1.5 text-xs font-medium text-gray-700">Select Date</p>
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {getUpcomingDatesForDay(selectedDay, 4).map(date => (
+                                                        <button
+                                                            key={date}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setSelectedDate(date);
+                                                                setSelectedSlot(null);
+                                                                setData('requested_at', '');
+                                                            }}
+                                                            className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+                                                                selectedDate === date
+                                                                    ? 'border-blue-600 bg-blue-600 text-white'
+                                                                    : 'border-gray-200 text-gray-600 hover:border-blue-400 hover:bg-blue-50'
+                                                            }`}
+                                                        >
+                                                            {formatDateLabel(date)}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Time slots — only shown after date is picked */}
+                                            {selectedDate && (
+                                            <div className="space-y-1.5">
                                             <p className="text-xs text-gray-400">
-                                                Select a time slot to enable your request.
+                                                Select a time slot for <span className="font-medium text-gray-700">{formatDateLabel(selectedDate)}</span>
                                             </p>
                                             {daySlots.map(slot => {
                                                 const active = selectedSlot === slot.id;
@@ -358,8 +415,10 @@ function CreateModal({ faculty, onClose }) {
                                             })}
                                             {!selectedSlot && (
                                                 <p className="text-xs text-amber-700">
-                                                    Choose the subject and time above before submitting.
+                                                    Choose a date and time slot above before submitting.
                                                 </p>
+                                            )}
+                                            </div>
                                             )}
                                         </div>
                                     )}
