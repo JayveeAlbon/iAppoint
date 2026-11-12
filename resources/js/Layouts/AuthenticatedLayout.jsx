@@ -355,9 +355,10 @@ function Sidebar({ user, notifications }) {
                             />
                         ) : (
                             <NavItem
+                                href={route('faculty.feedback.index')}
                                 icon={<IconMessageSquare />}
                                 label="Feedback"
-                                onClick={() => window.dispatchEvent(new Event('open-feedback'))}
+                                active={route().current('faculty.feedback.*')}
                             />
                         )}
                         {isFaculty && (
