@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Notifications\AppointmentRequestedNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -75,7 +76,14 @@ class AppointmentController extends Controller
         $data['student_id'] = $user->id;
         $appointment = Appointment::create($data);
 
-        $this->notifyAdmins($appointment);
+        // Notify admins — wrapped so SMTP failures never crash the request
+        try {
+            $this->notifyAdmins($appointment);
+        } catch (\Throwable $e) {
+            Log::warning('Admin notification failed on appointment request: ' . $e->getMessage(), [
+                'appointment_id' => $appointment->id,
+            ]);
+        }
 
         return back()->with('success', 'Appointment request submitted. Awaiting admin approval.');
     }
