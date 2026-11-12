@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AppointmentController as AdminAppointmentControll
 use App\Http\Controllers\Admin\AuditController as AdminAuditController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AdminFeedbackController;
+use App\Http\Controllers\StudentFeedbackController;
 use App\Http\Controllers\AppointmentController;
 use App\Http\Controllers\AppointmentFeedbackController;
 use App\Http\Controllers\ConversationController;
@@ -136,6 +137,10 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     // ── User feedback / snapshots to admin (issue tracker) ───────────────────
     Route::post('/user-feedback', [AdminFeedbackController::class, 'store'])->name('user-feedback.store');
+
+    // ── Student feedback page ─────────────────────────────────────────────────
+    Route::get('/feedback', [StudentFeedbackController::class, 'index'])->name('student.feedback.index');
+    Route::post('/feedback', [StudentFeedbackController::class, 'store'])->name('student.feedback.store');
 
     // ── Faculty status + catering sessions ───────────────────────────────────
     Route::get('/faculty-status', [FacultyStatusController::class, 'index'])->name('faculty-status.index');

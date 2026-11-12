@@ -346,11 +346,20 @@ function Sidebar({ user, notifications }) {
                             badge={notifications?.total ?? 0}
                             active={route().current('notifications.*')}
                         />
-                        <NavItem
-                            icon={<IconMessageSquare />}
-                            label="Feedback"
-                            onClick={() => window.dispatchEvent(new Event('open-feedback'))}
-                        />
+                        {isStudent ? (
+                            <NavItem
+                                href={route('student.feedback.index')}
+                                icon={<IconMessageSquare />}
+                                label="Feedback"
+                                active={route().current('student.feedback.*')}
+                            />
+                        ) : (
+                            <NavItem
+                                icon={<IconMessageSquare />}
+                                label="Feedback"
+                                onClick={() => window.dispatchEvent(new Event('open-feedback'))}
+                            />
+                        )}
                         {isFaculty && (
                             <NavItem
                                 href={route('faculty-status.index')}
