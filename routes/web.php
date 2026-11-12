@@ -164,6 +164,7 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/appointments', [AdminAppointmentController::class, 'index'])->name('appointments.index');
         Route::post('/appointments/{appointment}/approve', [AdminAppointmentController::class, 'approve'])->name('appointments.approve');
         Route::patch('/appointments/{appointment}/reject', [AdminAppointmentController::class, 'reject'])->name('appointments.reject');
+        Route::patch('/appointments/{appointment}/reschedule', [AdminAppointmentController::class, 'reschedule'])->name('appointments.reschedule');
         Route::get('/audit', [AdminAuditController::class, 'index'])->name('audit.index');
         Route::get('/settings', fn() => Inertia::render('Admin/Settings/Index'))->name('settings.index');
         Route::get('/feedback', [AdminFeedbackController::class, 'index'])->name('feedback.index');

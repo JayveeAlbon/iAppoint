@@ -118,6 +118,88 @@ function ActionModal({ appointment, action, onClose }) {
     );
 }
 
+// ── Reschedule modal ──────────────────────────────────────────────────────────
+
+function RescheduleModal({ appointment, onClose }) {
+    const { data, setData, patch, processing, errors } = useForm({
+        requested_at: appointment.requested_at
+            ? new Date(appointment.requested_at).toISOString().slice(0, 16)
+            : '',
+        admin_notes: appointment.admin_notes ?? '',
+    });
+
+    function submit(e) {
+        e.preventDefault();
+        patch(route('admin.appointments.reschedule', { appointment: appointment.id }), {
+            onSuccess: onClose,
+        });
+    }
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl">
+                <h3 className="mb-2 text-base font-semibold text-gray-900">Reschedule Appointment</h3>
+                <p className="mb-4 text-sm text-gray-500">
+                    <span className="font-medium text-gray-700">{appointment.title}</span>
+                    {' — '}{appointment.student?.name} → {appointment.faculty?.name}
+                </p>
+
+                <form onSubmit={submit} className="space-y-3">
+                    <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-700">
+                            New Date & Time <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="datetime-local"
+                            value={data.requested_at}
+                            onChange={e => setData('requested_at', e.target.value)}
+                            required
+                            className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
+                        />
+                        {errors.requested_at && <p className="mt-1 text-xs text-red-500">{errors.requested_at}</p>}
+                    </div>
+
+                    <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-700">
+                            Note to Student & Faculty (optional)
+                        </label>
+                        <textarea
+                            value={data.admin_notes}
+                            onChange={e => setData('admin_notes', e.target.value)}
+                            placeholder="Reason for rescheduling…"
+                            rows={3}
+                            className="w-full resize-none rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
+                        />
+                    </div>
+
+                    <div className="flex gap-2">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="flex-1 rounded-lg border border-gray-200 py-2.5 text-sm text-gray-600 hover:bg-gray-50"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={processing || !data.requested_at}
+                            className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                        >
+                            {processing && (
+                                <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+                                </svg>
+                            )}
+                            {processing ? 'Rescheduling…' : 'Reschedule'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
+
 // ── Appointment row ───────────────────────────────────────────────────────────
 
 function AppointmentRow({ appt, onAction }) {
@@ -161,8 +243,9 @@ function AppointmentRow({ appt, onAction }) {
             </td>
 
             <td className="px-5 py-3.5">
+                <div className="flex flex-wrap gap-1.5">
                 {appt.status === 'pending' && (
-                    <div className="flex gap-1.5">
+                    <>
                         <button
                             onClick={() => onAction(appt, 'approve')}
                             className="inline-flex items-center gap-1 rounded-md bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700 hover:bg-green-100 active:scale-95 transition-transform"
@@ -181,8 +264,21 @@ function AppointmentRow({ appt, onAction }) {
                             </svg>
                             Reject
                         </button>
-                    </div>
+                    </>
                 )}
+                {(appt.status === 'pending' || appt.status === 'approved') && (
+                    <button
+                        onClick={() => onAction(appt, 'reschedule')}
+                        className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-600 hover:bg-blue-100 active:scale-95 transition-transform"
+                    >
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                        </svg>
+                        Reschedule
+                    </button>
+                )}
+                </div>
                 {appt.admin_notes && (
                     <p className="mt-1 max-w-xs truncate text-[10px] text-gray-400">{appt.admin_notes}</p>
                 )}
@@ -195,6 +291,7 @@ function AppointmentRow({ appt, onAction }) {
 
 export default function AdminAppointments({ appointments, counts, filters }) {
     const [modal, setModal] = useState(null);
+    const [rescheduleAppt, setRescheduleAppt] = useState(null);
     const currentStatus = filters.status ?? 'pending';
 
     function changeStatus(s) {
@@ -219,6 +316,12 @@ export default function AdminAppointments({ appointments, counts, filters }) {
                     appointment={modal.appt}
                     action={modal.action}
                     onClose={() => setModal(null)}
+                />
+            )}
+            {rescheduleAppt && (
+                <RescheduleModal
+                    appointment={rescheduleAppt}
+                    onClose={() => setRescheduleAppt(null)}
                 />
             )}
 
@@ -264,7 +367,13 @@ export default function AdminAppointments({ appointments, counts, filters }) {
                                 <AppointmentRow
                                     key={appt.id}
                                     appt={appt}
-                                    onAction={(a, action) => setModal({ appt: a, action })}
+                                    onAction={(a, action) => {
+                                        if (action === 'reschedule') {
+                                            setRescheduleAppt(a);
+                                        } else {
+                                            setModal({ appt: a, action });
+                                        }
+                                    }}
                                 />
                             ))}
                         </tbody>

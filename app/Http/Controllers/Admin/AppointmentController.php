@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Appointment;
 use App\Notifications\AppointmentApprovedForFacultyNotification;
 use App\Notifications\AppointmentApprovedForStudentNotification;
+use App\Notifications\AppointmentRescheduledNotification;
 use App\Services\AuditLogService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -117,5 +118,60 @@ class AppointmentController extends Controller
         ]);
 
         return back()->with('success', 'Appointment rejected.');
+    }
+
+    public function reschedule(Request $request, Appointment $appointment): RedirectResponse
+    {
+        abort_if(!in_array($appointment->status, ['pending', 'approved']), 422);
+
+        $data = $request->validate([
+            'requested_at' => 'required|date|after:now',
+            'admin_notes'  => 'nullable|string|max:500',
+        ]);
+
+        $appointment->update([
+            'requested_at' => $data['requested_at'],
+            'admin_notes'  => $data['admin_notes'] ?? $appointment->admin_notes,
+        ]);
+
+        $this->audit->log('appointment.rescheduled', $appointment, [
+            'student'      => $appointment->student->name ?? null,
+            'faculty'      => $appointment->faculty->name ?? null,
+            'new_schedule' => $data['requested_at'],
+        ]);
+
+        $appointment->loadMissing(['student', 'faculty']);
+
+        // Database notifications
+        if ($appointment->student) {
+            $appointment->student->notify(
+                new AppointmentRescheduledNotification($appointment, ['database'])
+            );
+        }
+        if ($appointment->faculty) {
+            $appointment->faculty->notify(
+                new AppointmentRescheduledNotification($appointment, ['database'])
+            );
+        }
+
+        // Email notifications
+        try {
+            if ($appointment->student?->email) {
+                $appointment->student->notify(
+                    new AppointmentRescheduledNotification($appointment, ['mail'])
+                );
+            }
+            if ($appointment->faculty?->email) {
+                $appointment->faculty->notify(
+                    new AppointmentRescheduledNotification($appointment, ['mail'])
+                );
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Reschedule email failed: ' . $e->getMessage(), [
+                'appointment_id' => $appointment->id,
+            ]);
+        }
+
+        return back()->with('success', 'Appointment rescheduled. Student and faculty have been notified.');
     }
 }
