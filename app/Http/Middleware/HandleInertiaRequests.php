@@ -8,6 +8,7 @@ use App\Models\UserFeedback;
 use App\Notifications\AppointmentApprovedForFacultyNotification;
 use App\Notifications\AppointmentApprovedForStudentNotification;
 use App\Notifications\AppointmentReminderNotification;
+use App\Notifications\AppointmentRescheduledNotification;
 use App\Notifications\UserRegisteredInAppNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -75,19 +76,23 @@ class HandleInertiaRequests extends Middleware
                 ->count()
             : 0;
 
-        // Student: unread approved appointment notifications
+        // Student: unread approved + rescheduled appointment notifications
         $approvedAppointments = $user->isStudent()
             ? $user->unreadNotifications()
-                ->where('type', AppointmentApprovedForStudentNotification::class)
+                ->whereIn('type', [
+                    AppointmentApprovedForStudentNotification::class,
+                    AppointmentRescheduledNotification::class,
+                ])
                 ->count()
             : 0;
 
-        // Faculty: unread appointment + reminder notifications
+        // Faculty: unread appointment + reminder + rescheduled notifications
         $facultyAppointmentNotifs = $user->isFaculty()
             ? $user->unreadNotifications()
                 ->whereIn('type', [
                     AppointmentApprovedForFacultyNotification::class,
                     AppointmentReminderNotification::class,
+                    AppointmentRescheduledNotification::class,
                 ])
                 ->count()
             : 0;

@@ -7,6 +7,7 @@ use App\Models\UserFeedback;
 use App\Notifications\AppointmentApprovedForFacultyNotification;
 use App\Notifications\AppointmentApprovedForStudentNotification;
 use App\Notifications\AppointmentReminderNotification;
+use App\Notifications\AppointmentRescheduledNotification;
 use App\Notifications\UserRegisteredInAppNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -54,12 +55,45 @@ class NotificationController extends Controller
                 });
             }
 
+            // ── Student: rescheduled appointment notifications ──────────────
+            if ($user->isStudent()) {
+                $rescheduledNotifs = $user->notifications()
+                    ->where('type', AppointmentRescheduledNotification::class)
+                    ->latest()
+                    ->limit(50)
+                    ->get();
+
+                $rescheduledNotifs->whereNull('read_at')->each->markAsRead();
+
+                $rescheduledNotifs->each(function ($notification) use ($items): void {
+                    $data = $notification->data;
+                    $items->push([
+                        'id'          => 'rescheduled-'.$notification->id,
+                        'type'        => 'Appointment rescheduled',
+                        'title'       => 'Your appointment has been rescheduled',
+                        'description' => sprintf(
+                            '%s — new schedule: %s.%s',
+                            $data['title'] ?? 'Your appointment',
+                            isset($data['requested_at'])
+                                ? Carbon::parse($data['requested_at'])->format('M j, Y g:i A')
+                                : 'check your appointments',
+                            isset($data['admin_notes']) && $data['admin_notes']
+                                ? ' Note: ' . $data['admin_notes']
+                                : '',
+                        ),
+                        'created_at' => $notification->created_at,
+                        'href'       => route('appointments.index'),
+                    ]);
+                });
+            }
+
             // ── Faculty: appointment approved notifications ─────────────────
             if ($user->isFaculty()) {
                 $facultyNotifs = $user->notifications()
                     ->whereIn('type', [
                         AppointmentApprovedForFacultyNotification::class,
                         AppointmentReminderNotification::class,
+                        AppointmentRescheduledNotification::class,
                     ])
                     ->latest()
                     ->limit(100)
@@ -70,6 +104,7 @@ class NotificationController extends Controller
                 $facultyNotifs->each(function ($notification) use ($items): void {
                     $data = $notification->data;
                     $isReminder = $notification->type === AppointmentReminderNotification::class;
+                    $isRescheduled = $notification->type === AppointmentRescheduledNotification::class;
 
                     if ($isReminder) {
                         $timeLabel = ($data['type'] ?? '24h') === '1h' ? 'in 1 hour' : 'tomorrow';
@@ -83,6 +118,22 @@ class NotificationController extends Controller
                                 isset($data['requested_at'])
                                     ? Carbon::parse($data['requested_at'])->format('M j, Y g:i A')
                                     : 'the scheduled date',
+                            ),
+                            'created_at' => $notification->created_at,
+                            'href'       => route('appointments.index'),
+                        ]);
+                    } elseif ($isRescheduled) {
+                        $items->push([
+                            'id'          => 'rescheduled-faculty-'.$notification->id,
+                            'type'        => 'Appointment rescheduled',
+                            'title'       => 'An appointment was rescheduled',
+                            'description' => sprintf(
+                                '%s with %s — new schedule: %s.',
+                                $data['title'] ?? 'Appointment',
+                                $data['student_name'] ?? 'a student',
+                                isset($data['requested_at'])
+                                    ? Carbon::parse($data['requested_at'])->format('M j, Y g:i A')
+                                    : 'check your appointments',
                             ),
                             'created_at' => $notification->created_at,
                             'href'       => route('appointments.index'),
