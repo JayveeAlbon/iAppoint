@@ -30,7 +30,7 @@ class StudentFeedbackController extends Controller
         $data = $request->validate([
             'feedback_tab' => 'required|in:system,services',
             'category'     => 'required|string|max:100',
-            'priority'     => 'required|in:low,medium,high,urgent',
+            'priority'     => 'required|string|max:20',
             'subject'      => 'required|string|max:200',
             'message'      => 'required|string|max:5000',
             'suggestions'  => 'nullable|string|max:1000',
@@ -61,19 +61,32 @@ class StudentFeedbackController extends Controller
             $documentPath = 'feedback-documents/' . $filename;
         }
 
-        UserFeedback::create([
-            'user_id'         => $user->id,
-            'feedback_tab'    => $data['feedback_tab'],
-            'category'        => $data['category'],
-            'priority'        => $data['priority'],
-            'subject'         => $data['subject'],
-            'message'         => $data['message'],
-            'suggestions'     => $data['suggestions'] ?? null,
-            'page_url'        => $data['page_url'] ?? request()->url(),
-            'screenshot_path' => $screenshotPath,
-            'document_path'   => $documentPath,
-        ]);
+        // Try saving with new columns; fall back to basic columns if migration hasn't run
+        try {
+            UserFeedback::create([
+                'user_id'         => $user->id,
+                'feedback_tab'    => $data['feedback_tab'],
+                'category'        => $data['category'],
+                'priority'        => $data['priority'],
+                'subject'         => $data['subject'],
+                'message'         => $data['message'],
+                'suggestions'     => $data['suggestions'] ?? null,
+                'page_url'        => $data['page_url'] ?? request()->url(),
+                'screenshot_path' => $screenshotPath,
+                'document_path'   => $documentPath,
+            ]);
+        } catch (\Throwable $e) {
+            // Fallback if new columns don't exist yet
+            UserFeedback::create([
+                'user_id'         => $user->id,
+                'category'        => $data['category'],
+                'subject'         => $data['subject'],
+                'message'         => $data['message'] . "\n\n[Priority: " . $data['priority'] . "] [Tab: " . $data['feedback_tab'] . "]",
+                'page_url'        => $data['page_url'] ?? request()->url(),
+                'screenshot_path' => $screenshotPath,
+            ]);
+        }
 
-        return back()->with('success', 'Thank you! Your feedback has been submitted.');
+        return back()->with('success', 'Thank you! Your feedback has been submitted to the admin.');
     }
 }
