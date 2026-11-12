@@ -334,9 +334,6 @@ function Sidebar({ user, notifications }) {
                         {isFaculty && (
                             <NavItem href={route('schedule.index')} icon={<IconClock />} label="My Schedule" active={route().current('schedule.index')} />
                         )}
-                        {isFaculty && (
-                            <NavItem href={route('faculty-settings.index')} icon={<IconSettings />} label="Settings" active={route().current('faculty-settings.*')} />
-                        )}
                     </NavSection>
                 )}
 
@@ -361,6 +358,9 @@ function Sidebar({ user, notifications }) {
                                 label="My Status"
                                 active={route().current('faculty-status.*')}
                             />
+                        )}
+                        {isFaculty && (
+                            <NavItem href={route('faculty-settings.index')} icon={<IconSettings />} label="Settings" active={route().current('faculty-settings.*')} />
                         )}
                     </NavSection>
                 )}
