@@ -12,6 +12,7 @@ use App\Http\Controllers\FacultyController;
 use App\Http\Controllers\FacultyStatusController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\FacultySettingsController;
 use App\Http\Controllers\ScheduleController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
@@ -112,6 +113,12 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/schedule', [ScheduleController::class, 'store'])->name('schedule.store');
     Route::put('/schedule/{schedule}', [ScheduleController::class, 'update'])->name('schedule.update');
     Route::delete('/schedule/{schedule}', [ScheduleController::class, 'destroy'])->name('schedule.destroy');
+
+    // ── Faculty settings (subjects) ───────────────────────────────────────────
+    Route::get('/faculty-settings', [FacultySettingsController::class, 'index'])->name('faculty-settings.index');
+    Route::post('/faculty-settings', [FacultySettingsController::class, 'store'])->name('faculty-settings.store');
+    Route::put('/faculty-settings/{subject}', [FacultySettingsController::class, 'update'])->name('faculty-settings.update');
+    Route::delete('/faculty-settings/{subject}', [FacultySettingsController::class, 'destroy'])->name('faculty-settings.destroy');
 
     // ── Conversations / Messages ──────────────────────────────────────────────
     Route::get('/messages', [ConversationController::class, 'index'])->name('messages.index');

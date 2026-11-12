@@ -23,7 +23,7 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        User::firstOrCreate(
+        User::firstOrCreate( 
             ['email' => 'faculty@scc.edu'],
             [
                 'name'        => 'Sample Faculty',
