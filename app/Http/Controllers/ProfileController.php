@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\StudentSubject;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,9 +20,15 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): Response
     {
+        $user = $request->user();
+        $enrolledSubjects = $user->role === 'student'
+            ? StudentSubject::where('user_id', $user->id)->orderBy('subject_name')->get()
+            : collect();
+
         return Inertia::render('Profile/Edit', [
-            'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
-            'status' => session('status'),
+            'mustVerifyEmail'  => $request->user() instanceof MustVerifyEmail,
+            'status'           => session('status'),
+            'enrolledSubjects' => $enrolledSubjects,
         ]);
     }
 
@@ -68,6 +75,33 @@ class ProfileController extends Controller
         $user->update(['avatar' => 'avatars/' . $filename]);
 
         return Redirect::route('profile.edit')->with('status', 'avatar-updated');
+    }
+
+    public function storeSubject(Request $request): RedirectResponse
+    {
+        abort_if($request->user()->role !== 'student', 403);
+
+        $data = $request->validate([
+            'subject_code' => 'nullable|string|max:50',
+            'subject_name' => 'required|string|max:255',
+            'instructor'   => 'nullable|string|max:255',
+        ]);
+
+        StudentSubject::create([
+            'user_id'      => $request->user()->id,
+            'subject_code' => $data['subject_code'] ?? null,
+            'subject_name' => $data['subject_name'],
+            'instructor'   => $data['instructor'] ?? null,
+        ]);
+
+        return Redirect::route('profile.edit')->with('status', 'subject-added');
+    }
+
+    public function destroySubject(Request $request, StudentSubject $subject): RedirectResponse
+    {
+        abort_if($subject->user_id !== $request->user()->id, 403);
+        $subject->delete();
+        return Redirect::route('profile.edit')->with('status', 'subject-removed');
     }
 
     /**

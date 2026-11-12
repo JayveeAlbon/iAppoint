@@ -93,6 +93,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::post('/profile/subjects', [ProfileController::class, 'storeSubject'])->name('profile.subjects.store');
+    Route::delete('/profile/subjects/{subject}', [ProfileController::class, 'destroySubject'])->name('profile.subjects.destroy');
 });
 
 Route::middleware(['auth', 'active'])->group(function () {
