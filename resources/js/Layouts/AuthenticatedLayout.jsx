@@ -296,13 +296,15 @@ function UserDropdown({ user }) {
 // ── Sidebar ────────────────────────────────────────────────────────────────────
 
 function Sidebar({ user, notifications }) {
-    const isAdmin   = user.role === 'admin';
-    const isFaculty = user.role === 'faculty';
-    const isStudent = user.role === 'student';
+    const isAdmin      = user.role === 'admin';
+    const isFaculty    = user.role === 'faculty';
+    const isStudent    = user.role === 'student';
+    const isAlsoFaculty = isAdmin && user.is_also_faculty;
 
     const roleLabel =
-        isAdmin   ? 'Administrator' :
-        isFaculty ? 'Faculty'       : 'Student';
+        isAdmin && isAlsoFaculty ? 'Admin · Faculty' :
+        isAdmin                  ? 'Administrator'   :
+        isFaculty                ? 'Faculty'         : 'Student';
 
     const unreadMessages = notifications?.unread_messages ?? 0;
 
@@ -384,6 +386,13 @@ function Sidebar({ user, notifications }) {
                         <NavItem href={route('admin.audit.index')}        icon={<IconFileText />} label="History"      active={route().current('admin.audit.*')} />
                         <NavItem href={route('admin.notification-logs.index')} icon={<IconActivity />} label="Notification Logs" badge={notifications?.failed_notifications ?? 0} active={route().current('admin.notification-logs.*')} />
                         <NavItem href={route('admin.settings.index')}     icon={<IconSettings />} label="Settings"     active={route().current('admin.settings.*')} />
+                    </NavSection>
+                )}
+
+                {isAlsoFaculty && (
+                    <NavSection label="Faculty Mode">
+                        <NavItem href={route('appointments.index')} icon={<IconCalendar />} label="My Appointments" active={route().current('appointments.*')} />
+                        <NavItem href={route('schedule.index')}     icon={<IconClock />}    label="My Schedule"     active={route().current('schedule.index')} />
                     </NavSection>
                 )}
             </nav>

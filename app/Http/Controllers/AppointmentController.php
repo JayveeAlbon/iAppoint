@@ -30,7 +30,7 @@ class AppointmentController extends Controller
     {
         $user = $request->user();
 
-        if ($user->isFaculty()) {
+        if ($user->canActAsFaculty()) {
             $appointments = Appointment::where('faculty_id', $user->id)
                 ->with(['student:id,name,avatar,course,year_level', 'feedback'])
                 ->orderByDesc('requested_at')
@@ -58,7 +58,10 @@ class AppointmentController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        $faculty = User::where('role', 'faculty')
+        $faculty = User::where(function ($q) {
+                $q->where('role', 'faculty')
+                  ->orWhere(fn($q2) => $q2->where('role', 'admin')->where('is_also_faculty', true));
+            })
             ->whereIn('status', ['active', 'pending'])
             ->select('id', 'name', 'department', 'avatar', 'status')
             ->with(['schedules' => fn($q) => $q
@@ -83,7 +86,7 @@ class AppointmentController extends Controller
      */
     public function availability(Request $request, User $faculty): JsonResponse
     {
-        abort_if($faculty->role !== 'faculty', 404);
+        abort_if(!$faculty->canActAsFaculty(), 404);
 
         $year  = (int) $request->query('year',  now()->year);
         $month = (int) $request->query('month', now()->month);
@@ -107,9 +110,15 @@ class AppointmentController extends Controller
         $data = $request->validate([
             'faculty_id'   => [
                 'required',
-                Rule::exists('users', 'id')
-                    ->where('role', 'faculty')
-                    ->whereIn('status', ['active', 'pending']),
+                function ($attribute, $value, $fail) {
+                    $user = \App\Models\User::find($value);
+                    if (!$user) { $fail('Selected faculty does not exist.'); return; }
+                    $validFaculty = $user->role === 'faculty' && in_array($user->status, ['active', 'pending']);
+                    $validAdmin   = $user->role === 'admin'   && $user->is_also_faculty && $user->status === 'active';
+                    if (!$validFaculty && !$validAdmin) {
+                        $fail('The selected user is not an available faculty member.');
+                    }
+                },
             ],
             'title'        => 'required|string|max:200',
             'message'      => 'nullable|string|max:1000',
@@ -188,7 +197,7 @@ class AppointmentController extends Controller
     public function facultyApprove(Request $request, Appointment $appointment): RedirectResponse
     {
         $user = $request->user();
-        abort_if(!$user->isFaculty(), 403);
+        abort_if(!$user->canActAsFaculty(), 403);
         abort_if($appointment->faculty_id !== $user->id, 403);
         abort_if($appointment->status !== 'pending', 422);
 
@@ -222,7 +231,7 @@ class AppointmentController extends Controller
     public function facultyReject(Request $request, Appointment $appointment): RedirectResponse
     {
         $user = $request->user();
-        abort_if(!$user->isFaculty(), 403);
+        abort_if(!$user->canActAsFaculty(), 403);
         abort_if($appointment->faculty_id !== $user->id, 403);
         abort_if(!in_array($appointment->status, ['pending', 'approved']), 422);
 
@@ -260,7 +269,7 @@ class AppointmentController extends Controller
     public function facultyReschedule(Request $request, Appointment $appointment): RedirectResponse
     {
         $user = $request->user();
-        abort_if(!$user->isFaculty(), 403);
+        abort_if(!$user->canActAsFaculty(), 403);
         abort_if($appointment->faculty_id !== $user->id, 403);
         abort_if(!in_array($appointment->status, ['pending', 'approved']), 422);
 
@@ -302,7 +311,7 @@ class AppointmentController extends Controller
     public function facultyInvite(Request $request): RedirectResponse
     {
         $user = $request->user();
-        abort_if(!$user->isFaculty(), 403);
+        abort_if(!$user->canActAsFaculty(), 403);
 
         $data = $request->validate([
             'student_id'   => [

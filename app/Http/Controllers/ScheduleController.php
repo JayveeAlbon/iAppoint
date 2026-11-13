@@ -12,7 +12,7 @@ class ScheduleController extends Controller
 {
     public function index(): Response
     {
-        abort_if(auth()->user()->role !== 'faculty', 403);
+        abort_if(!auth()->user()->canActAsFaculty(), 403);
 
         $schedules = auth()->user()
             ->schedules()
@@ -27,7 +27,7 @@ class ScheduleController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        abort_if(auth()->user()->role !== 'faculty', 403);
+        abort_if(!auth()->user()->canActAsFaculty(), 403);
 
         $data = $request->validate([
             'day'         => 'required|in:Monday,Tuesday,Wednesday,Thursday,Friday,Saturday',

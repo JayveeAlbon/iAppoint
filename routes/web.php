@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AppointmentController as AdminAppointmentController;
 use App\Http\Controllers\Admin\AuditController as AdminAuditController;
 use App\Http\Controllers\Admin\NotificationLogController as AdminNotificationLogController;
+use App\Http\Controllers\Admin\SettingsController as AdminSettingsController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AdminFeedbackController;
 use App\Http\Controllers\FacultyFeedbackController;
@@ -120,7 +121,8 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::patch('/appointments/{appointment}/reject', [AdminAppointmentController::class, 'reject'])->name('appointments.reject');
         Route::patch('/appointments/{appointment}/reschedule', [AdminAppointmentController::class, 'reschedule'])->name('appointments.reschedule');
         Route::get('/audit', [AdminAuditController::class, 'index'])->name('audit.index');
-        Route::get('/settings', fn() => Inertia::render('Admin/Settings/Index'))->name('settings.index');
+        Route::get('/settings', [AdminSettingsController::class, 'index'])->name('settings.index');
+        Route::post('/settings/toggle-faculty-mode', [AdminSettingsController::class, 'toggleFacultyMode'])->name('settings.toggle-faculty-mode');
         Route::get('/feedback', [AdminFeedbackController::class, 'index'])->name('feedback.index');
         Route::post('/feedback/{feedback}/resolve', [AdminFeedbackController::class, 'resolve'])->name('feedback.resolve');
         Route::delete('/feedback/{feedback}', [AdminFeedbackController::class, 'destroy'])->name('feedback.destroy');
