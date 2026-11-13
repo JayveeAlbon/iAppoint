@@ -7,6 +7,8 @@ use App\Models\User;
 use App\Notifications\AppointmentRequestedNotification;
 use App\Notifications\AppointmentRequestedForFacultyNotification;
 use App\Notifications\AppointmentApprovedForStudentNotification;
+use App\Notifications\AppointmentInvitedNotification;
+use App\Notifications\AppointmentInviteResponseNotification;
 use App\Notifications\AppointmentRejectedByFacultyNotification;
 use App\Notifications\AppointmentRescheduledByFacultyNotification;
 use App\Notifications\AppointmentCancelledNotification;
@@ -34,13 +36,23 @@ class AppointmentController extends Controller
                 ->orderByDesc('requested_at')
                 ->get();
 
+            // Active students for the invite modal
+            $students = User::where('role', 'student')
+                ->where('status', 'active')
+                ->select('id', 'name', 'student_id', 'course', 'year_level', 'avatar')
+                ->orderBy('name')
+                ->get()
+                ->map(fn($s) => array_merge($s->toArray(), ['avatar_url' => $s->avatar_url]));
+
             return Inertia::render('Appointments/Index', [
                 'appointments' => $appointments,
                 'faculty'      => [],
+                'students'     => $students,
                 'viewAs'       => 'faculty',
             ]);
         }
 
+        // Student view — include invited appointments too
         $appointments = Appointment::where('student_id', $user->id)
             ->with(['faculty:id,name,avatar,department', 'feedback'])
             ->orderByDesc('created_at')
@@ -61,6 +73,7 @@ class AppointmentController extends Controller
         return Inertia::render('Appointments/Index', [
             'appointments' => $appointments,
             'faculty'      => $faculty,
+            'students'     => [],
             'viewAs'       => 'student',
         ]);
     }
@@ -283,9 +296,143 @@ class AppointmentController extends Controller
         return back()->with('success', 'Appointment rescheduled. The student has been notified.');
     }
 
+    /**
+     * Faculty invites a student to an appointment.
+     */
+    public function facultyInvite(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        abort_if(!$user->isFaculty(), 403);
+
+        $data = $request->validate([
+            'student_id'   => [
+                'required',
+                Rule::exists('users', 'id')
+                    ->where('role', 'student')
+                    ->where('status', 'active'),
+            ],
+            'title'        => 'required|string|max:200',
+            'message'      => 'nullable|string|max:1000',
+            'requested_at' => 'required|date|after:now',
+        ]);
+
+        // Duplicate-booking check (same slot already pending/approved/invited)
+        $conflict = Appointment::where('faculty_id', $user->id)
+            ->whereIn('status', ['pending', 'approved', 'invited'])
+            ->where('requested_at', $data['requested_at'])
+            ->exists();
+
+        if ($conflict) {
+            return back()->withErrors([
+                'requested_at' => 'This time slot is already reserved. Please choose a different time.',
+            ])->withInput();
+        }
+
+        $appointment = Appointment::create([
+            'faculty_id'   => $user->id,
+            'student_id'   => $data['student_id'],
+            'initiated_by' => $user->id,
+            'title'        => $data['title'],
+            'message'      => $data['message'] ?? null,
+            'requested_at' => $data['requested_at'],
+            'status'       => 'invited',
+        ]);
+
+        $appointment->loadMissing(['student', 'faculty']);
+
+        // ── In-app notification ───────────────────────────────────────────────
+        if ($appointment->student) {
+            $appointment->student->notify(
+                new AppointmentInvitedNotification($appointment, ['database'])
+            );
+        }
+
+        // ── Email notification (logged) ───────────────────────────────────────
+        if ($appointment->student?->email) {
+            $this->logger->send(
+                $appointment->student,
+                new AppointmentInvitedNotification($appointment, ['mail']),
+                'appointment.invited',
+                $appointment,
+            );
+        }
+
+        return back()->with('success', 'Invitation sent. The student has been notified.');
+    }
+
+    /**
+     * Student accepts a faculty invitation → status becomes pending (awaits admin).
+     */
+    public function studentAccept(Request $request, Appointment $appointment): RedirectResponse
+    {
+        $user = $request->user();
+        abort_if(!$user->isStudent(), 403);
+        abort_if($appointment->student_id !== $user->id, 403);
+        abort_if($appointment->status !== 'invited', 422);
+
+        $appointment->update(['status' => 'pending']);
+        $appointment->loadMissing(['student', 'faculty']);
+
+        // ── Notify faculty in-app ─────────────────────────────────────────────
+        if ($appointment->faculty) {
+            $appointment->faculty->notify(
+                new AppointmentInviteResponseNotification($appointment, 'accepted', ['database'])
+            );
+        }
+
+        // ── Notify faculty email (logged) ─────────────────────────────────────
+        if ($appointment->faculty?->email) {
+            $this->logger->send(
+                $appointment->faculty,
+                new AppointmentInviteResponseNotification($appointment, 'accepted', ['mail']),
+                'appointment.invite.accepted',
+                $appointment,
+            );
+        }
+
+        // ── Notify admins (email, logged) ─────────────────────────────────────
+        $this->notifyAdmins($appointment);
+
+        return back()->with('success', 'You accepted the invitation. The appointment is now awaiting admin approval.');
+    }
+
+    /**
+     * Student declines a faculty invitation → status becomes declined.
+     */
+    public function studentDecline(Request $request, Appointment $appointment): RedirectResponse
+    {
+        $user = $request->user();
+        abort_if(!$user->isStudent(), 403);
+        abort_if($appointment->student_id !== $user->id, 403);
+        abort_if($appointment->status !== 'invited', 422);
+
+        $appointment->update(['status' => 'declined']);
+        $appointment->loadMissing(['student', 'faculty']);
+
+        // ── Notify faculty in-app ─────────────────────────────────────────────
+        if ($appointment->faculty) {
+            $appointment->faculty->notify(
+                new AppointmentInviteResponseNotification($appointment, 'declined', ['database'])
+            );
+        }
+
+        // ── Notify faculty email (logged) ─────────────────────────────────────
+        if ($appointment->faculty?->email) {
+            $this->logger->send(
+                $appointment->faculty,
+                new AppointmentInviteResponseNotification($appointment, 'declined', ['mail']),
+                'appointment.invite.declined',
+                $appointment,
+            );
+        }
+
+        return back()->with('success', 'You declined the invitation. The faculty has been notified.');
+    }
+
     public function destroy(Request $request, Appointment $appointment): RedirectResponse
     {
         abort_if($appointment->student_id !== $request->user()->id, 403);
+        // Allow cancelling: pending, invited, or declined (not approved)
         abort_if($appointment->status === 'approved', 422);
 
         $appointment->loadMissing(['student', 'faculty']);

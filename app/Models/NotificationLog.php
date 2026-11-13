@@ -26,16 +26,19 @@ class NotificationLog extends Model
 
     // Human-readable labels for each notification type
     public const TYPE_LABELS = [
-        'appointment.requested'          => 'New Appointment Request',
-        'appointment.requested.faculty'  => 'New Appointment Request',
-        'appointment.approved.student'   => 'Appointment Approved',
-        'appointment.approved.faculty'   => 'Appointment Approved',
-        'appointment.rejected.admin'     => 'Appointment Rejected',
-        'appointment.rejected.faculty'   => 'Appointment Rejected',
-        'appointment.rescheduled'        => 'Appointment Rescheduled',
-        'appointment.rescheduled.faculty'=> 'Appointment Rescheduled',
-        'appointment.cancelled.faculty'  => 'Appointment Cancelled',
-        'appointment.cancelled.admin'    => 'Appointment Cancelled',
+        'appointment.requested'           => 'New Appointment Request',
+        'appointment.requested.faculty'   => 'New Appointment Request',
+        'appointment.approved.student'    => 'Appointment Approved',
+        'appointment.approved.faculty'    => 'Appointment Approved',
+        'appointment.rejected.admin'      => 'Appointment Rejected',
+        'appointment.rejected.faculty'    => 'Appointment Rejected',
+        'appointment.rescheduled'         => 'Appointment Rescheduled',
+        'appointment.rescheduled.faculty' => 'Appointment Rescheduled',
+        'appointment.cancelled.faculty'   => 'Appointment Cancelled',
+        'appointment.cancelled.admin'     => 'Appointment Cancelled',
+        'appointment.invited'             => 'Appointment Invitation',
+        'appointment.invite.accepted'     => 'Invitation Accepted',
+        'appointment.invite.declined'     => 'Invitation Declined',
     ];
 
     public function getLabelAttribute(): string

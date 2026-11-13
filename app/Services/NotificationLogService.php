@@ -151,6 +151,9 @@ class NotificationLogService
             'appointment.rescheduled.faculty' => new \App\Notifications\AppointmentRescheduledByFacultyNotification($appointment, ['mail']),
             'appointment.cancelled.faculty'   => new \App\Notifications\AppointmentCancelledNotification($appointment, ['mail']),
             'appointment.cancelled.admin'     => new \App\Notifications\AppointmentCancelledNotification($appointment, ['mail']),
+            'appointment.invited'             => new \App\Notifications\AppointmentInvitedNotification($appointment, ['mail']),
+            'appointment.invite.accepted'     => new \App\Notifications\AppointmentInviteResponseNotification($appointment, 'accepted', ['mail']),
+            'appointment.invite.declined'     => new \App\Notifications\AppointmentInviteResponseNotification($appointment, 'declined', ['mail']),
             default => null,
         };
     }

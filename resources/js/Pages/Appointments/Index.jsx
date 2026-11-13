@@ -157,6 +157,8 @@ const STATUS_STYLE = {
     approved:  'bg-green-50 text-green-700',
     rejected:  'bg-red-50 text-red-500',
     completed: 'bg-gray-100 text-gray-500',
+    invited:   'bg-purple-50 text-purple-700',
+    declined:  'bg-rose-50 text-rose-600',
 };
 
 function StatusBadge({ status }) {
@@ -164,6 +166,125 @@ function StatusBadge({ status }) {
         <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${STATUS_STYLE[status]}`}>
             {status}
         </span>
+    );
+}
+
+// ── Faculty invite modal ──────────────────────────────────────────────────────
+
+function FacultyInviteModal({ students, onClose }) {
+    const { data, setData, post, processing, errors, reset } = useForm({
+        student_id:   '',
+        title:        '',
+        message:      '',
+        requested_at: '',
+    });
+
+    function submit(e) {
+        e.preventDefault();
+        post(route('appointments.faculty.invite'), {
+            onSuccess: () => { reset(); onClose(); },
+        });
+    }
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
+                <div className="mb-4 flex items-center justify-between">
+                    <div>
+                        <h3 className="text-base font-semibold text-gray-900">Invite Student</h3>
+                        <p className="mt-0.5 text-xs text-gray-400">Send an appointment invitation directly to a student.</p>
+                    </div>
+                    <button onClick={onClose} className="rounded-lg p-1.5 text-gray-400 hover:bg-gray-100">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <form onSubmit={submit} className="space-y-3">
+                    <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-700">
+                            Student <span className="text-red-500">*</span>
+                        </label>
+                        <select
+                            value={data.student_id}
+                            onChange={e => setData('student_id', e.target.value)}
+                            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
+                        >
+                            <option value="">Select student…</option>
+                            {students.map(s => (
+                                <option key={s.id} value={s.id}>
+                                    {s.name}{s.course ? ` — ${s.course}` : ''}{s.year_level ? ` ${s.year_level}` : ''}
+                                </option>
+                            ))}
+                        </select>
+                        {errors.student_id && <p className="mt-1 text-xs text-red-500">{errors.student_id}</p>}
+                    </div>
+
+                    <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-700">
+                            Subject / Title <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            value={data.title}
+                            onChange={e => setData('title', e.target.value)}
+                            placeholder="e.g. Thesis advisory session"
+                            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
+                        />
+                        {errors.title && <p className="mt-1 text-xs text-red-500">{errors.title}</p>}
+                    </div>
+
+                    <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-700">
+                            Date &amp; Time <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="datetime-local"
+                            value={data.requested_at}
+                            onChange={e => setData('requested_at', e.target.value)}
+                            min={new Date(Date.now() + 60000).toISOString().slice(0, 16)}
+                            className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
+                        />
+                        {errors.requested_at && <p className="mt-1 text-xs text-red-500">{errors.requested_at}</p>}
+                    </div>
+
+                    <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-700">
+                            Message <span className="text-gray-400 font-normal">(optional)</span>
+                        </label>
+                        <textarea
+                            value={data.message}
+                            onChange={e => setData('message', e.target.value)}
+                            placeholder="Briefly describe the purpose…"
+                            rows={3}
+                            className="w-full resize-none rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
+                        />
+                        {errors.message && <p className="mt-1 text-xs text-red-500">{errors.message}</p>}
+                    </div>
+
+                    <div className="flex gap-2 pt-1">
+                        <button type="button" onClick={onClose}
+                            className="flex-1 rounded-lg border border-gray-200 py-2.5 text-sm text-gray-600 hover:bg-gray-50">
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={processing || !data.student_id || !data.title || !data.requested_at}
+                            className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-purple-600 py-2.5 text-sm font-semibold text-white hover:bg-purple-700 disabled:opacity-50"
+                        >
+                            {processing && (
+                                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+                                </svg>
+                            )}
+                            {processing ? 'Sending…' : 'Send Invitation'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     );
 }
 
@@ -384,6 +505,40 @@ function FacultyAppointmentRow({ appt, onReject, onReschedule }) {
     );
 }
 
+// ── Invitation response buttons (student) ────────────────────────────────────
+
+function InviteResponseButtons({ appt }) {
+    const { post: accept, processing: accepting } = useForm();
+    const { post: decline, processing: declining } = useForm();
+
+    return (
+        <>
+            <button
+                onClick={() => accept(route('appointments.student.accept', { appointment: appt.id }), { preserveScroll: true })}
+                disabled={accepting || declining}
+                className="inline-flex items-center gap-1 rounded-md bg-green-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-green-700 disabled:opacity-50"
+            >
+                {accepting
+                    ? <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+                    : <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                }
+                {accepting ? '…' : 'Accept'}
+            </button>
+            <button
+                onClick={() => decline(route('appointments.student.decline', { appointment: appt.id }), { preserveScroll: true })}
+                disabled={accepting || declining}
+                className="inline-flex items-center gap-1 rounded-md bg-rose-50 px-2.5 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-100 disabled:opacity-50"
+            >
+                {declining
+                    ? <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+                    : <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                }
+                {declining ? '…' : 'Decline'}
+            </button>
+        </>
+    );
+}
+
 // ── Student appointment card ───────────────────────────────────────────────────
 
 function AppointmentCard({ appt, isStudent, onGiveFeedback, onFacultyReject, onFacultyReschedule }) {
@@ -529,18 +684,26 @@ function AppointmentCard({ appt, isStudent, onGiveFeedback, onFacultyReject, onF
                     {cancelling ? 'Cancelling…' : 'Cancel'}
                 </button>
             )}
+
+            {/* Invitation response — student only */}
+            {isStudent && appt.status === 'invited' && (
+                <div className="flex flex-col gap-1.5 flex-shrink-0">
+                    <InviteResponseButtons appt={appt} />
+                </div>
+            )}
         </div>
     );
 }
 
 // ── Page ───────────────────────────────────────────────────────────────────────
 
-export default function AppointmentsIndex({ appointments, faculty, viewAs }) {
+export default function AppointmentsIndex({ appointments, faculty, students = [], viewAs }) {
     const isStudent = viewAs === 'student';
-    const [showCreate, setShowCreate] = useState(false);
+    const [showCreate,  setShowCreate]  = useState(false);
+    const [showInvite,  setShowInvite]  = useState(false);
     const [feedbackFor, setFeedbackFor] = useState(null);
-    const [tab, setTab] = useState('pending');
-    const [rejectAppt, setRejectAppt] = useState(null);
+    const [tab,         setTab]         = useState('pending');
+    const [rejectAppt,     setRejectAppt]     = useState(null);
     const [rescheduleAppt, setRescheduleAppt] = useState(null);
 
     const byStatus = {
@@ -548,9 +711,16 @@ export default function AppointmentsIndex({ appointments, faculty, viewAs }) {
         approved:  appointments.filter(a => a.status === 'approved'),
         rejected:  appointments.filter(a => a.status === 'rejected'),
         completed: appointments.filter(a => a.status === 'completed'),
+        invited:   appointments.filter(a => a.status === 'invited'),
+        declined:  appointments.filter(a => a.status === 'declined'),
     };
 
     const shown = tab === 'all' ? appointments : (byStatus[tab] ?? appointments);
+
+    // Tabs shown to students vs faculty
+    const studentTabs = ['invited', 'pending', 'approved', 'rejected', 'completed', 'all'];
+    const facultyTabs = ['invited', 'pending', 'approved', 'rejected', 'completed', 'all'];
+    const tabs        = isStudent ? studentTabs : facultyTabs;
 
     return (
         <AuthenticatedLayout
@@ -575,6 +745,17 @@ export default function AppointmentsIndex({ appointments, faculty, viewAs }) {
                             Request Appointment
                         </button>
                     )}
+                    {!isStudent && (
+                        <button
+                            onClick={() => setShowInvite(true)}
+                            className="flex items-center gap-1.5 rounded-md bg-purple-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-purple-700"
+                        >
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.63 3.42 2 2 0 0 1 3.6 1.26h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.74a16 16 0 0 0 5.35 5.35l.95-.95a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+                            </svg>
+                            Invite Student
+                        </button>
+                    )}
                 </div>
             }
         >
@@ -582,6 +763,10 @@ export default function AppointmentsIndex({ appointments, faculty, viewAs }) {
 
             {showCreate && (
                 <BookingCalendar faculty={faculty} onClose={() => setShowCreate(false)} />
+            )}
+
+            {showInvite && (
+                <FacultyInviteModal students={students} onClose={() => setShowInvite(false)} />
             )}
 
             {feedbackFor && (
@@ -597,16 +782,23 @@ export default function AppointmentsIndex({ appointments, faculty, viewAs }) {
             )}
 
             <div className="p-6">
-                <div className="mb-4 flex gap-1 rounded-lg border border-gray-200 bg-gray-50 p-1 w-fit">
-                    {['pending', 'approved', 'rejected', 'completed', 'all'].map(t => (
+                <div className="mb-4 flex flex-wrap gap-1 rounded-lg border border-gray-200 bg-gray-50 p-1 w-fit">
+                    {tabs.map(t => (
                         <button
                             key={t}
                             onClick={() => setTab(t)}
-                            className={`rounded-md px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
+                            className={`relative rounded-md px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
                                 tab === t ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
                             }`}
                         >
-                            {t} {t !== 'all' && `(${byStatus[t].length})`}
+                            {t}
+                            {t !== 'all' && byStatus[t]?.length > 0 && (
+                                <span className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
+                                    t === 'invited' ? 'bg-purple-100 text-purple-700' : 'bg-gray-200 text-gray-600'
+                                }`}>
+                                    {byStatus[t].length}
+                                </span>
+                            )}
                         </button>
                     ))}
                 </div>
@@ -615,7 +807,10 @@ export default function AppointmentsIndex({ appointments, faculty, viewAs }) {
                     <div className="rounded-lg border border-dashed border-gray-200 p-12 text-center">
                         <p className="text-sm text-gray-400">
                             {isStudent
-                                ? tab === 'pending' ? 'No pending appointments. Click "Request Appointment" to get started.' : `No ${tab} appointments.`
+                                ? tab === 'invited'  ? 'No pending invitations from faculty.'
+                                : tab === 'pending'  ? 'No pending appointments. Click "Request Appointment" to get started.'
+                                : `No ${tab} appointments.`
+                                : tab === 'invited'  ? 'No invitations sent yet. Click "Invite Student" to send one.'
                                 : `No ${tab === 'all' ? '' : tab + ' '}appointments.`}
                         </p>
                     </div>
