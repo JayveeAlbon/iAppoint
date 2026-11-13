@@ -445,7 +445,7 @@ export default function AuthenticatedLayout({ header, children }) {
                 <main className="flex-1 overflow-y-auto">{children}</main>
             </div>
 
-            {user.role !== 'admin' && <FeedbackFab />}
+
         </div>
     );
 }
