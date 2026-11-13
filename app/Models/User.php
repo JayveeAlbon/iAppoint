@@ -22,6 +22,7 @@ class User extends Authenticatable
         'google_id',
         'role',
         'status',
+        'is_also_faculty',
         'avatar',
         'student_id',
         'course',
@@ -60,6 +61,7 @@ class User extends Authenticatable
             'email_verified_at'   => 'datetime',
             'location_consent_at' => 'datetime',
             'password'            => 'hashed',
+            'is_also_faculty'     => 'boolean',
         ];
     }
 
@@ -134,6 +136,14 @@ class User extends Authenticatable
     public function isAdmin(): bool    { return $this->role === 'admin'; }
     public function isActive(): bool   { return $this->status === 'active'; }
     public function isPending(): bool  { return $this->status === 'pending'; }
+
+    /**
+     * True for regular faculty AND for all admins (admins always have faculty capabilities).
+     */
+    public function canActAsFaculty(): bool
+    {
+        return $this->role === 'faculty' || $this->role === 'admin';
+    }
 
     public function initials(): string
     {

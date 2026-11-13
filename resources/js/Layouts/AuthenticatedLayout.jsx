@@ -302,9 +302,8 @@ function Sidebar({ user, notifications }) {
     const isAlsoFaculty = isAdmin && user.is_also_faculty;
 
     const roleLabel =
-        isAdmin && isAlsoFaculty ? 'Admin · Faculty' :
-        isAdmin                  ? 'Administrator'   :
-        isFaculty                ? 'Faculty'         : 'Student';
+        isAdmin   ? 'Administrator · Faculty' :
+        isFaculty ? 'Faculty'                 : 'Student';
 
     const unreadMessages = notifications?.unread_messages ?? 0;
 
@@ -389,7 +388,7 @@ function Sidebar({ user, notifications }) {
                     </NavSection>
                 )}
 
-                {isAlsoFaculty && (
+                {isAdmin && (
                     <NavSection label="Faculty Mode">
                         <NavItem href={route('appointments.index')} icon={<IconCalendar />} label="My Appointments" active={route().current('appointments.*')} />
                         <NavItem href={route('schedule.index')}     icon={<IconClock />}    label="My Schedule"     active={route().current('schedule.index')} />
