@@ -351,25 +351,30 @@ function FacultyAppointmentRow({ appt, onReject, onReschedule }) {
                                 {approving ? 'Approving…' : 'Approve'}
                             </button>
                         )}
-                        <button
-                            onClick={() => onReject(appt)}
-                            className="inline-flex items-center gap-1 rounded-md bg-red-50 px-2.5 py-1 text-xs font-medium text-red-500 hover:bg-red-100 active:scale-95 transition-transform"
-                        >
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                            </svg>
-                            Reject
-                        </button>
-                        <button
-                            onClick={() => onReschedule(appt)}
-                            className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-600 hover:bg-blue-100 active:scale-95 transition-transform"
-                        >
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
-                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-                            </svg>
-                            Reschedule
-                        </button>
+                        {/* Pending: Approve + Reject only. Approved: Reschedule only. */}
+                        {appt.status === 'pending' && (
+                            <button
+                                onClick={() => onReject(appt)}
+                                className="inline-flex items-center gap-1 rounded-md bg-red-50 px-2.5 py-1 text-xs font-medium text-red-500 hover:bg-red-100 active:scale-95 transition-transform"
+                            >
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                                </svg>
+                                Reject
+                            </button>
+                        )}
+                        {appt.status === 'approved' && (
+                            <button
+                                onClick={() => onReschedule(appt)}
+                                className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-600 hover:bg-blue-100 active:scale-95 transition-transform"
+                            >
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+                                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                                </svg>
+                                Reschedule
+                            </button>
+                        )}
                     </div>
                 ) : (
                     <span className="text-xs text-gray-400">—</span>
