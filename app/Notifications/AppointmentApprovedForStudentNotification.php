@@ -41,13 +41,14 @@ class AppointmentApprovedForStudentNotification extends Notification
         $when = optional($a->requested_at)->format('D, M j Y — g:i A');
 
         $mail = (new MailMessage)
-            ->subject('[iAppoint] Your appointment has been approved — ' . $a->title)
+            ->subject('Your Appointment Request Has Been Approved — ' . $a->title)
             ->greeting("Hi {$notifiable->name},")
-            ->line("Good news! Your appointment request has been approved by the administrator.")
+            ->line("Great news! Your appointment request has been approved by the administrator.")
             ->line("**Subject:** {$a->title}")
             ->line("**Faculty:** " . ($a->faculty->name ?? '—')
                 . ($a->faculty->department ? " ({$a->faculty->department})" : ''))
-            ->line("**Scheduled for:** {$when}");
+            ->line("**Scheduled Date & Time:** {$when}")
+            ->line("**Status:** APPROVED");
 
         if ($a->admin_notes) {
             $mail->line("**Note from admin:** {$a->admin_notes}");
@@ -55,6 +56,7 @@ class AppointmentApprovedForStudentNotification extends Notification
 
         return $mail
             ->action('View My Appointments', url('/appointments'))
-            ->line('Please arrive on time. Reach out to the faculty via Messages if you need to adjust anything.');
+            ->line('Please arrive on time. Contact the faculty via Messages if you need to adjust anything.')
+            ->line('This is an automated notification from the iAppoint system.');
     }
 }

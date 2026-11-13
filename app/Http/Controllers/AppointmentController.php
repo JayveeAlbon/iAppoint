@@ -8,6 +8,7 @@ use App\Notifications\AppointmentRequestedNotification;
 use App\Notifications\AppointmentRequestedForFacultyNotification;
 use App\Notifications\AppointmentRejectedByFacultyNotification;
 use App\Notifications\AppointmentRescheduledByFacultyNotification;
+use App\Notifications\AppointmentCancelledNotification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -150,21 +151,24 @@ class AppointmentController extends Controller
         return back()->with('success', 'Appointment request submitted. Awaiting admin approval.');
     }
 
-    private function notifyAdmins(Appointment $appointment): void
+    private function notifyAdmins(Appointment $appointment, bool $isCancellation = false): void
     {
         $recipients = User::where('role', 'admin')
             ->where('status', 'active')
             ->whereNotNull('email')
             ->get();
 
+        $notification = $isCancellation
+            ? new AppointmentCancelledNotification($appointment, ['mail'])
+            : new AppointmentRequestedNotification($appointment);
+
         $configured = config('services.admin_notify_email') ?: env('ADMIN_NOTIFY_EMAIL');
         if ($configured) {
-            Notification::route('mail', $configured)
-                ->notify(new AppointmentRequestedNotification($appointment));
+            Notification::route('mail', $configured)->notify($notification);
         }
 
         if ($recipients->isNotEmpty()) {
-            Notification::send($recipients, new AppointmentRequestedNotification($appointment));
+            Notification::send($recipients, $notification);
         }
     }
 
@@ -296,7 +300,40 @@ class AppointmentController extends Controller
         abort_if($appointment->student_id !== $request->user()->id, 403);
         abort_if($appointment->status === 'approved', 422);
 
+        // Load relationships before deleting so we can notify
+        $appointment->loadMissing(['student', 'faculty']);
+        $facultyUser = $appointment->faculty;
+
         $appointment->delete();
+
+        // Notify faculty — in-app + email
+        if ($facultyUser) {
+            try {
+                $facultyUser->notify(new AppointmentCancelledNotification($appointment, ['database']));
+            } catch (\Throwable $e) {
+                Log::warning('Cancellation in-app notification failed for faculty: ' . $e->getMessage());
+            }
+            try {
+                if ($facultyUser->email) {
+                    $facultyUser->notify(new AppointmentCancelledNotification($appointment, ['mail']));
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Cancellation email failed for faculty: ' . $e->getMessage(), [
+                    'appointment_id' => $appointment->id,
+                    'exception'      => $e,
+                ]);
+            }
+        }
+
+        // Notify admins — email only
+        try {
+            $this->notifyAdmins($appointment, isCancellation: true);
+        } catch (\Throwable $e) {
+            Log::warning('Cancellation admin notification failed: ' . $e->getMessage(), [
+                'appointment_id' => $appointment->id,
+                'exception'      => $e,
+            ]);
+        }
 
         return back()->with('success', 'Appointment request cancelled.');
     }

@@ -46,12 +46,13 @@ class AppointmentRequestedForFacultyNotification extends Notification
         }
 
         $mail = (new MailMessage)
-            ->subject('[iAppoint] New appointment request from a student — ' . $a->title)
+            ->subject('New Appointment Request - ' . ($a->student->name ?? '—'))
             ->greeting("Hello {$notifiable->name},")
-            ->line('A student has requested an appointment with you.')
+            ->line('A student has submitted a new appointment request with you.')
+            ->line("**Student:** {$studentLabel}" . ($a->student?->email ? " — {$a->student->email}" : ''))
             ->line("**Subject:** {$a->title}")
-            ->line("**Student:** {$studentLabel}")
-            ->line("**Preferred date:** {$when}");
+            ->line("**Preferred Date & Time:** {$when}")
+            ->line("**Status:** PENDING");
 
         if ($a->message) {
             $mail->line("**Student's message:** {$a->message}");
@@ -59,6 +60,7 @@ class AppointmentRequestedForFacultyNotification extends Notification
 
         return $mail
             ->action('View My Appointments', url('/appointments'))
-            ->line('You can approve, decline, or propose a new schedule from your appointments page.');
+            ->line('Please log in to approve, decline, or propose a new schedule.')
+            ->line('This is an automated notification from the iAppoint system.');
     }
 }

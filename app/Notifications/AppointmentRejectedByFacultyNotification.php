@@ -40,12 +40,13 @@ class AppointmentRejectedByFacultyNotification extends Notification
         $when = optional($a->requested_at)->format('D, M j Y — g:i A');
 
         $mail = (new MailMessage)
-            ->subject('[iAppoint] Your appointment was declined by the faculty — ' . $a->title)
+            ->subject('Your Appointment Request Has Been Rejected — ' . $a->title)
             ->greeting("Hi {$notifiable->name},")
-            ->line("Unfortunately, the faculty has declined your appointment request.")
+            ->line("We regret to inform you that the faculty has declined your appointment request.")
             ->line("**Subject:** " . $a->title)
             ->line("**Faculty:** " . ($a->faculty?->name ?? '—'))
-            ->line("**Requested for:** {$when}");
+            ->line("**Requested Date & Time:** {$when}")
+            ->line("**Status:** REJECTED");
 
         if ($a->admin_notes) {
             $mail->line("**Reason:** {$a->admin_notes}");
@@ -53,6 +54,7 @@ class AppointmentRejectedByFacultyNotification extends Notification
 
         return $mail
             ->action('View My Appointments', url('/appointments'))
-            ->line('You may submit a new request at a different time.');
+            ->line('You may submit a new request at a different time.')
+            ->line('This is an automated notification from the iAppoint system.');
     }
 }

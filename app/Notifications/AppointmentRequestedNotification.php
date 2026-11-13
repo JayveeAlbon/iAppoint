@@ -24,15 +24,17 @@ class AppointmentRequestedNotification extends Notification
         $when = optional($a->requested_at)->format('D, M j Y — g:i A');
 
         return (new MailMessage)
-            ->subject('[iAppoint] New appointment request — ' . ($a->title) . ' (' . ($a->student->name ?? '—') . ')')
+            ->subject('New Appointment Request — ' . ($a->title) . ' (' . ($a->student->name ?? '—') . ')')
             ->greeting('Hello Administrator,')
             ->line("A new appointment request has been submitted and needs your review.")
-            ->line("**Subject:** {$a->title}")
-            ->line("**Student:** " . ($a->student->name ?? '—'))
+            ->line("**Student:** " . ($a->student->name ?? '—') . ($a->student?->email ? " ({$a->student->email})" : ''))
             ->line("**Faculty:** " . ($a->faculty->name ?? '—'))
-            ->line("**Preferred date:** {$when}")
-            ->when($a->message, fn ($m) => $m->line('**Message:** ' . $a->message))
+            ->line("**Subject:** {$a->title}")
+            ->line("**Preferred Date & Time:** {$when}")
+            ->line("**Status:** PENDING")
+            ->when($a->message, fn ($m) => $m->line('**Message from student:** ' . $a->message))
             ->action('Review Appointment', url('/admin/appointments'))
-            ->line('Please act on this request as soon as possible.');
+            ->line('Please review and act on this request as soon as possible.')
+            ->line('This is an automated notification from the iAppoint system.');
     }
 }
