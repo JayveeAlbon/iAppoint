@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Notifications\AppointmentRequestedNotification;
 use App\Notifications\AppointmentRejectedByFacultyNotification;
 use App\Notifications\AppointmentRescheduledByFacultyNotification;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -58,6 +59,29 @@ class AppointmentController extends Controller
         ]);
     }
 
+    /**
+     * JSON — returns booked datetimes for a faculty in a given year+month.
+     * Used by the calendar booking UI to grey out taken slots.
+     */
+    public function availability(Request $request, User $faculty): JsonResponse
+    {
+        abort_if($faculty->role !== 'faculty', 404);
+
+        $year  = (int) $request->query('year',  now()->year);
+        $month = (int) $request->query('month', now()->month);
+
+        // All pending or approved appointments for this faculty in the requested month
+        $booked = Appointment::where('faculty_id', $faculty->id)
+            ->whereIn('status', ['pending', 'approved'])
+            ->whereYear('requested_at', $year)
+            ->whereMonth('requested_at', $month)
+            ->pluck('requested_at')
+            ->map(fn($dt) => $dt->setTimezone(config('app.timezone'))->format('Y-m-d H:i'))
+            ->values();
+
+        return response()->json(['booked' => $booked]);
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $user = $request->user();
@@ -74,6 +98,18 @@ class AppointmentController extends Controller
             'message'      => 'nullable|string|max:1000',
             'requested_at' => 'required|date|after:now',
         ]);
+
+        // Server-side duplicate-booking check: same faculty, same datetime, not rejected
+        $conflict = Appointment::where('faculty_id', $data['faculty_id'])
+            ->whereIn('status', ['pending', 'approved'])
+            ->where('requested_at', $data['requested_at'])
+            ->exists();
+
+        if ($conflict) {
+            return back()->withErrors([
+                'requested_at' => 'This time slot is already booked for the selected faculty. Please choose another time.',
+            ])->withInput();
+        }
 
         $data['student_id'] = $user->id;
         $appointment = Appointment::create($data);

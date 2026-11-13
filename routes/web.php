@@ -76,6 +76,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     // ── Appointments ─────────────────────────────────────────────────────────
     Route::get('/appointments', [AppointmentController::class, 'index'])->name('appointments.index');
     Route::post('/appointments', [AppointmentController::class, 'store'])->name('appointments.store');
+    Route::get('/appointments/availability/{faculty}', [AppointmentController::class, 'availability'])->name('appointments.availability');
     Route::delete('/appointments/{appointment}', [AppointmentController::class, 'destroy'])->name('appointments.destroy');
     Route::post('/appointments/{appointment}/feedback', [AppointmentFeedbackController::class, 'store'])->name('appointments.feedback.store');
     // Faculty-only actions
