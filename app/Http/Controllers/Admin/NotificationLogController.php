@@ -19,8 +19,7 @@ class NotificationLogController extends Controller
     {
         abort_if(!auth()->user()->isAdmin(), 403);
 
-        $query = NotificationLog::with(['appointment:id,title,requested_at,status'])
-            ->orderByDesc('created_at');
+        $query = NotificationLog::orderByDesc('created_at');
 
         // ── Filters ───────────────────────────────────────────────────────────
         if ($search = $request->query('search')) {
@@ -68,8 +67,15 @@ class NotificationLogController extends Controller
     {
         abort_if(!auth()->user()->isAdmin(), 403);
 
-        $notificationLog->load(['appointment.student:id,name,email,course,year_level',
-                                'appointment.faculty:id,name,email,department']);
+        $notificationLog->load(['recipient']);
+
+        // Appointment may be null if it was hard-deleted
+        $appt = $notificationLog->appointment_id
+            ? \App\Models\Appointment::with([
+                'student:id,name,email,course,year_level',
+                'faculty:id,name,email,department',
+              ])->find($notificationLog->appointment_id)
+            : null;
 
         return response()->json([
             'log' => [
@@ -84,13 +90,13 @@ class NotificationLogController extends Controller
                 'error_message'     => $notificationLog->error_message,
                 'sent_at'           => $notificationLog->sent_at?->toIso8601String(),
                 'created_at'        => $notificationLog->created_at->toIso8601String(),
-                'appointment'       => $notificationLog->appointment ? [
-                    'id'           => $notificationLog->appointment->id,
-                    'title'        => $notificationLog->appointment->title,
-                    'requested_at' => $notificationLog->appointment->requested_at?->toIso8601String(),
-                    'status'       => $notificationLog->appointment->status,
-                    'student'      => $notificationLog->appointment->student?->only('id','name','email','course','year_level'),
-                    'faculty'      => $notificationLog->appointment->faculty?->only('id','name','email','department'),
+                'appointment'       => $appt ? [
+                    'id'           => $appt->id,
+                    'title'        => $appt->title,
+                    'requested_at' => $appt->requested_at?->toIso8601String(),
+                    'status'       => $appt->status,
+                    'student'      => $appt->student?->only('id','name','email','course','year_level'),
+                    'faculty'      => $appt->faculty?->only('id','name','email','department'),
                 ] : null,
             ],
         ]);

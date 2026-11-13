@@ -76,10 +76,13 @@ class NotificationLogService
     {
         abort_if($log->status !== 'failed', 422, 'Only failed notifications can be retried.');
 
-        $recipient = $log->recipient;
+        $recipient    = $log->recipient;
         abort_if(!$recipient, 422, 'Recipient user no longer exists.');
 
-        $appointment = $log->appointment;
+        // Appointment may be null if it was hard-deleted; buildNotification handles null gracefully
+        $appointment = $log->appointment_id
+            ? \App\Models\Appointment::find($log->appointment_id)
+            : null;
 
         // Rebuild the right notification class from the type key
         $notification = $this->buildNotification($log->notification_type, $appointment);
