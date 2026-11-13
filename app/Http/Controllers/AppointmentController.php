@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Appointment;
 use App\Models\User;
 use App\Notifications\AppointmentRequestedNotification;
+use App\Notifications\AppointmentRequestedForFacultyNotification;
 use App\Notifications\AppointmentRejectedByFacultyNotification;
 use App\Notifications\AppointmentRescheduledByFacultyNotification;
 use Illuminate\Http\JsonResponse;
@@ -119,6 +120,28 @@ class AppointmentController extends Controller
             $this->notifyAdmins($appointment);
         } catch (\Throwable $e) {
             Log::warning('Admin notification failed on appointment request: ' . $e->getMessage(), [
+                'appointment_id' => $appointment->id,
+                'exception'      => $e,
+            ]);
+        }
+
+        // Notify the faculty — in-app (database) + email
+        $appointment->loadMissing(['faculty']);
+
+        if ($appointment->faculty) {
+            $appointment->faculty->notify(
+                new AppointmentRequestedForFacultyNotification($appointment, ['database'])
+            );
+        }
+
+        try {
+            if ($appointment->faculty?->email) {
+                $appointment->faculty->notify(
+                    new AppointmentRequestedForFacultyNotification($appointment, ['mail'])
+                );
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Faculty request email failed: ' . $e->getMessage(), [
                 'appointment_id' => $appointment->id,
                 'exception'      => $e,
             ]);
