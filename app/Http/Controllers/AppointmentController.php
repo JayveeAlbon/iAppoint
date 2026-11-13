@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Appointment;
 use App\Models\User;
 use App\Notifications\AppointmentRequestedNotification;
+use App\Notifications\AppointmentRejectedByFacultyNotification;
+use App\Notifications\AppointmentRescheduledByFacultyNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -82,6 +84,7 @@ class AppointmentController extends Controller
         } catch (\Throwable $e) {
             Log::warning('Admin notification failed on appointment request: ' . $e->getMessage(), [
                 'appointment_id' => $appointment->id,
+                'exception'      => $e,
             ]);
         }
 
@@ -104,6 +107,129 @@ class AppointmentController extends Controller
         if ($recipients->isNotEmpty()) {
             Notification::send($recipients, new AppointmentRequestedNotification($appointment));
         }
+    }
+
+    public function facultyApprove(Request $request, Appointment $appointment): RedirectResponse
+    {
+        $user = $request->user();
+        abort_if(!$user->isFaculty(), 403);
+        abort_if($appointment->faculty_id !== $user->id, 403);
+        abort_if($appointment->status !== 'pending', 422);
+
+        $appointment->update([
+            'status'      => 'approved',
+            'approved_at' => now(),
+        ]);
+
+        $appointment->loadMissing(['student', 'faculty']);
+
+        // In-app notification for student
+        if ($appointment->student) {
+            $appointment->student->notify(
+                new \App\Notifications\AppointmentApprovedForStudentNotification($appointment, ['database'])
+            );
+        }
+
+        // Email notification for student
+        try {
+            if ($appointment->student?->email) {
+                $appointment->student->notify(
+                    new \App\Notifications\AppointmentApprovedForStudentNotification($appointment, ['mail'])
+                );
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Faculty approve email failed: ' . $e->getMessage(), [
+                'appointment_id' => $appointment->id,
+                'exception'      => $e,
+            ]);
+        }
+
+        return back()->with('success', 'Appointment approved. The student has been notified.');
+    }
+
+    public function facultyReject(Request $request, Appointment $appointment): RedirectResponse
+    {
+        $user = $request->user();
+        abort_if(!$user->isFaculty(), 403);
+        abort_if($appointment->faculty_id !== $user->id, 403);
+        abort_if(!in_array($appointment->status, ['pending', 'approved']), 422);
+
+        $data = $request->validate([
+            'faculty_notes' => 'nullable|string|max:500',
+        ]);
+
+        $appointment->update([
+            'status'      => 'rejected',
+            'admin_notes' => $data['faculty_notes'] ?? null,
+        ]);
+
+        $appointment->loadMissing(['student', 'faculty']);
+
+        // In-app notification for student
+        if ($appointment->student) {
+            $appointment->student->notify(
+                new AppointmentRejectedByFacultyNotification($appointment, ['database'])
+            );
+        }
+
+        // Email notification for student
+        try {
+            if ($appointment->student?->email) {
+                $appointment->student->notify(
+                    new AppointmentRejectedByFacultyNotification($appointment, ['mail'])
+                );
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Faculty reject email failed: ' . $e->getMessage(), [
+                'appointment_id' => $appointment->id,
+                'exception'      => $e,
+            ]);
+        }
+
+        return back()->with('success', 'Appointment declined. The student has been notified.');
+    }
+
+    public function facultyReschedule(Request $request, Appointment $appointment): RedirectResponse
+    {
+        $user = $request->user();
+        abort_if(!$user->isFaculty(), 403);
+        abort_if($appointment->faculty_id !== $user->id, 403);
+        abort_if(!in_array($appointment->status, ['pending', 'approved']), 422);
+
+        $data = $request->validate([
+            'requested_at'  => 'required|date|after:now',
+            'faculty_notes' => 'nullable|string|max:500',
+        ]);
+
+        $appointment->update([
+            'requested_at' => $data['requested_at'],
+            'admin_notes'  => $data['faculty_notes'] ?? $appointment->admin_notes,
+        ]);
+
+        $appointment->loadMissing(['student', 'faculty']);
+
+        // In-app notification for student
+        if ($appointment->student) {
+            $appointment->student->notify(
+                new AppointmentRescheduledByFacultyNotification($appointment, ['database'])
+            );
+        }
+
+        // Email notification for student
+        try {
+            if ($appointment->student?->email) {
+                $appointment->student->notify(
+                    new AppointmentRescheduledByFacultyNotification($appointment, ['mail'])
+                );
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Faculty reschedule email failed: ' . $e->getMessage(), [
+                'appointment_id' => $appointment->id,
+                'exception'      => $e,
+            ]);
+        }
+
+        return back()->with('success', 'Appointment rescheduled. The student has been notified.');
     }
 
     public function destroy(Request $request, Appointment $appointment): RedirectResponse

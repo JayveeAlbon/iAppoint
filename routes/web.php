@@ -135,6 +135,10 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/appointments', [AppointmentController::class, 'store'])->name('appointments.store');
     Route::delete('/appointments/{appointment}', [AppointmentController::class, 'destroy'])->name('appointments.destroy');
     Route::post('/appointments/{appointment}/feedback', [AppointmentFeedbackController::class, 'store'])->name('appointments.feedback.store');
+    // Faculty-only actions
+    Route::post('/appointments/{appointment}/faculty-approve', [AppointmentController::class, 'facultyApprove'])->name('appointments.faculty.approve');
+    Route::patch('/appointments/{appointment}/faculty-reject', [AppointmentController::class, 'facultyReject'])->name('appointments.faculty.reject');
+    Route::patch('/appointments/{appointment}/faculty-reschedule', [AppointmentController::class, 'facultyReschedule'])->name('appointments.faculty.reschedule');
 
     // ── User feedback / snapshots to admin (issue tracker) ───────────────────
     Route::post('/user-feedback', [AdminFeedbackController::class, 'store'])->name('user-feedback.store');

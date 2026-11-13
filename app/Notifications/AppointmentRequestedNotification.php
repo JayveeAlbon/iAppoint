@@ -24,7 +24,7 @@ class AppointmentRequestedNotification extends Notification
         $when = optional($a->requested_at)->format('D, M j Y — g:i A');
 
         return (new MailMessage)
-            ->subject('[iAppoint] New appointment request awaiting approval')
+            ->subject('[iAppoint] New appointment request — ' . ($a->title) . ' (' . ($a->student->name ?? '—') . ')')
             ->greeting('Hello Administrator,')
             ->line("A new appointment request has been submitted and needs your review.")
             ->line("**Subject:** {$a->title}")

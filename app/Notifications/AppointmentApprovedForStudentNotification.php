@@ -41,7 +41,7 @@ class AppointmentApprovedForStudentNotification extends Notification
         $when = optional($a->requested_at)->format('D, M j Y — g:i A');
 
         $mail = (new MailMessage)
-            ->subject('[iAppoint] Your appointment has been approved')
+            ->subject('[iAppoint] Your appointment has been approved — ' . $a->title)
             ->greeting("Hi {$notifiable->name},")
             ->line("Good news! Your appointment request has been approved by the administrator.")
             ->line("**Subject:** {$a->title}")

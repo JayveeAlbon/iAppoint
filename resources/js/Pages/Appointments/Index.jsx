@@ -468,17 +468,232 @@ function CreateModal({ faculty, onClose }) {
     );
 }
 
+// ── Faculty action modals ─────────────────────────────────────────────────────
+
+function FacultyRejectModal({ appointment, onClose }) {
+    const { data, setData, patch, processing } = useForm({ faculty_notes: '' });
+
+    function submit(e) {
+        e.preventDefault();
+        patch(route('appointments.faculty.reject', { appointment: appointment.id }), {
+            preserveScroll: true,
+            onSuccess: onClose,
+        });
+    }
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl">
+                <h3 className="mb-1 text-base font-semibold text-gray-900">Decline Appointment</h3>
+                <p className="mb-4 text-xs text-gray-500">
+                    <span className="font-medium text-gray-700">{appointment.title}</span>
+                    {' — '}{appointment.student?.name}
+                </p>
+                <form onSubmit={submit} className="space-y-3">
+                    <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-700">
+                            Reason (optional)
+                        </label>
+                        <textarea
+                            value={data.faculty_notes}
+                            onChange={e => setData('faculty_notes', e.target.value)}
+                            placeholder="Let the student know why..."
+                            rows={3}
+                            className="w-full resize-none rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
+                        />
+                    </div>
+                    <div className="flex gap-2">
+                        <button type="button" onClick={onClose}
+                            className="flex-1 rounded-lg border border-gray-200 py-2.5 text-sm text-gray-600 hover:bg-gray-50">
+                            Cancel
+                        </button>
+                        <button type="submit" disabled={processing}
+                            className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-red-500 py-2.5 text-sm font-medium text-white hover:bg-red-600 disabled:opacity-50">
+                            {processing && <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>}
+                            {processing ? 'Declining…' : 'Decline'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
+
+function FacultyRescheduleModal({ appointment, onClose }) {
+    const { data, setData, patch, processing, errors } = useForm({
+        requested_at: appointment.requested_at
+            ? new Date(appointment.requested_at).toISOString().slice(0, 16)
+            : '',
+        faculty_notes: '',
+    });
+
+    function submit(e) {
+        e.preventDefault();
+        patch(route('appointments.faculty.reschedule', { appointment: appointment.id }), {
+            preserveScroll: true,
+            onSuccess: onClose,
+        });
+    }
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="w-full max-w-sm rounded-xl bg-white p-6 shadow-2xl">
+                <h3 className="mb-1 text-base font-semibold text-gray-900">Propose New Schedule</h3>
+                <p className="mb-4 text-xs text-gray-500">
+                    <span className="font-medium text-gray-700">{appointment.title}</span>
+                    {' — '}{appointment.student?.name}
+                </p>
+                <form onSubmit={submit} className="space-y-3">
+                    <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-700">
+                            New Date &amp; Time <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                            type="datetime-local"
+                            value={data.requested_at}
+                            onChange={e => setData('requested_at', e.target.value)}
+                            required
+                            className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
+                        />
+                        {errors.requested_at && <p className="mt-1 text-xs text-red-500">{errors.requested_at}</p>}
+                    </div>
+                    <div>
+                        <label className="mb-1 block text-xs font-medium text-gray-700">
+                            Note to Student (optional)
+                        </label>
+                        <textarea
+                            value={data.faculty_notes}
+                            onChange={e => setData('faculty_notes', e.target.value)}
+                            placeholder="Reason for rescheduling..."
+                            rows={3}
+                            className="w-full resize-none rounded-md border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
+                        />
+                    </div>
+                    <div className="flex gap-2">
+                        <button type="button" onClick={onClose}
+                            className="flex-1 rounded-lg border border-gray-200 py-2.5 text-sm text-gray-600 hover:bg-gray-50">
+                            Cancel
+                        </button>
+                        <button type="submit" disabled={processing || !data.requested_at}
+                            className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50">
+                            {processing && <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>}
+                            {processing ? 'Saving…' : 'Propose Schedule'}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+}
+
+// ── Faculty table row ─────────────────────────────────────────────────────────
+
+function FacultyAppointmentRow({ appt, onReject, onReschedule }) {
+    const [approving, setApproving] = useState(false);
+    const canAct = appt.status === 'pending' || appt.status === 'approved';
+
+    function facultyApprove() {
+        if (!confirm('Approve this appointment?')) return;
+        setApproving(true);
+        router.post(route('appointments.faculty.approve', { appointment: appt.id }), {}, {
+            preserveScroll: true,
+            onFinish: () => setApproving(false),
+        });
+    }
+
+    return (
+        <tr className="hover:bg-gray-50">
+            {/* Student */}
+            <td className="px-5 py-3.5">
+                <div className="flex items-center gap-2.5">
+                    <Avatar name={appt.student?.name} avatarUrl={appt.student?.avatar_url} size={8} />
+                    <div>
+                        <p className="text-sm font-medium text-gray-900">{appt.student?.name ?? '—'}</p>
+                        <p className="text-xs text-gray-400">{appt.student?.course ?? 'Student'}</p>
+                    </div>
+                </div>
+            </td>
+
+            {/* Subject */}
+            <td className="px-5 py-3.5">
+                <p className="text-sm font-medium text-gray-900">{appt.title}</p>
+                {appt.message && (
+                    <p className="mt-0.5 max-w-xs truncate text-xs text-gray-400">{appt.message}</p>
+                )}
+            </td>
+
+            {/* Requested For */}
+            <td className="hidden px-5 py-3.5 text-xs text-gray-500 lg:table-cell">
+                {formatDate(appt.requested_at)}
+            </td>
+
+            {/* Status */}
+            <td className="px-5 py-3.5">
+                <StatusBadge status={appt.status} />
+                {appt.admin_notes && (
+                    <p className="mt-1 max-w-xs truncate text-[10px] text-gray-400">{appt.admin_notes}</p>
+                )}
+            </td>
+
+            {/* Action */}
+            <td className="px-5 py-3.5">
+                {canAct ? (
+                    <div className="flex flex-wrap gap-1.5">
+                        {appt.status === 'pending' && (
+                            <button
+                                onClick={facultyApprove}
+                                disabled={approving}
+                                className="inline-flex items-center gap-1 rounded-md bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700 hover:bg-green-100 disabled:opacity-50 active:scale-95 transition-transform"
+                            >
+                                {approving
+                                    ? <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+                                    : <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                }
+                                {approving ? 'Approving…' : 'Approve'}
+                            </button>
+                        )}
+                        <button
+                            onClick={() => onReject(appt)}
+                            className="inline-flex items-center gap-1 rounded-md bg-red-50 px-2.5 py-1 text-xs font-medium text-red-500 hover:bg-red-100 active:scale-95 transition-transform"
+                        >
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                            Reject
+                        </button>
+                        <button
+                            onClick={() => onReschedule(appt)}
+                            className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-600 hover:bg-blue-100 active:scale-95 transition-transform"
+                        >
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                            </svg>
+                            Reschedule
+                        </button>
+                    </div>
+                ) : (
+                    <span className="text-xs text-gray-400">—</span>
+                )}
+            </td>
+        </tr>
+    );
+}
+
 // ── Student appointment card ───────────────────────────────────────────────────
 
-function AppointmentCard({ appt, isStudent, onGiveFeedback }) {
+function AppointmentCard({ appt, isStudent, onGiveFeedback, onFacultyReject, onFacultyReschedule }) {
     const person = isStudent ? appt.faculty : appt.student;
     const personLabel = isStudent ? 'Faculty' : 'Student';
     const [cancelling, setCancelling] = useState(false);
+    const [approving, setApproving] = useState(false);
 
     const canGiveFeedback =
         isStudent
         && !appt.feedback
         && (appt.status === 'approved' || appt.status === 'completed');
+
+    const canFacultyAct = !isStudent && (appt.status === 'pending' || appt.status === 'approved');
 
     function cancel() {
         if (!confirm('Cancel this appointment?')) return;
@@ -486,6 +701,15 @@ function AppointmentCard({ appt, isStudent, onGiveFeedback }) {
         router.delete(route('appointments.destroy', { appointment: appt.id }), {
             preserveScroll: true,
             onFinish: () => setCancelling(false),
+        });
+    }
+
+    function facultyApprove() {
+        if (!confirm('Approve this appointment?')) return;
+        setApproving(true);
+        router.post(route('appointments.faculty.approve', { appointment: appt.id }), {}, {
+            preserveScroll: true,
+            onFinish: () => setApproving(false),
         });
     }
 
@@ -546,6 +770,44 @@ function AppointmentCard({ appt, isStudent, onGiveFeedback }) {
                         Rate Faculty
                     </button>
                 )}
+
+                {/* Faculty action buttons */}
+                {canFacultyAct && (
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                        {appt.status === 'pending' && (
+                            <button
+                                onClick={facultyApprove}
+                                disabled={approving}
+                                className="inline-flex items-center gap-1 rounded-md bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700 hover:bg-green-100 disabled:opacity-50 active:scale-95 transition-transform"
+                            >
+                                {approving
+                                    ? <svg className="animate-spin h-3 w-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+                                    : <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                }
+                                {approving ? 'Approving…' : 'Approve'}
+                            </button>
+                        )}
+                        <button
+                            onClick={() => onFacultyReject(appt)}
+                            className="inline-flex items-center gap-1 rounded-md bg-red-50 px-2.5 py-1 text-xs font-medium text-red-500 hover:bg-red-100 active:scale-95 transition-transform"
+                        >
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                            </svg>
+                            Decline
+                        </button>
+                        <button
+                            onClick={() => onFacultyReschedule(appt)}
+                            className="inline-flex items-center gap-1 rounded-md bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-600 hover:bg-blue-100 active:scale-95 transition-transform"
+                        >
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                            </svg>
+                            Reschedule
+                        </button>
+                    </div>
+                )}
             </div>
 
             {isStudent && (appt.status === 'pending' || appt.status === 'approved') && (
@@ -574,6 +836,8 @@ export default function AppointmentsIndex({ appointments, faculty, viewAs }) {
     const [showCreate, setShowCreate] = useState(false);
     const [feedbackFor, setFeedbackFor] = useState(null);
     const [tab, setTab] = useState('pending');
+    const [rejectAppt, setRejectAppt] = useState(null);
+    const [rescheduleAppt, setRescheduleAppt] = useState(null);
 
     const byStatus = {
         pending:   appointments.filter(a => a.status === 'pending'),
@@ -620,6 +884,14 @@ export default function AppointmentsIndex({ appointments, faculty, viewAs }) {
                 <FeedbackModal appointment={feedbackFor} onClose={() => setFeedbackFor(null)} />
             )}
 
+            {rejectAppt && (
+                <FacultyRejectModal appointment={rejectAppt} onClose={() => setRejectAppt(null)} />
+            )}
+
+            {rescheduleAppt && (
+                <FacultyRescheduleModal appointment={rescheduleAppt} onClose={() => setRescheduleAppt(null)} />
+            )}
+
             <div className="p-6">
                 <div className="mb-4 flex gap-1 rounded-lg border border-gray-200 bg-gray-50 p-1 w-fit">
                     {['pending', 'approved', 'rejected', 'completed', 'all'].map(t => (
@@ -643,16 +915,42 @@ export default function AppointmentsIndex({ appointments, faculty, viewAs }) {
                                 : `No ${tab === 'all' ? '' : tab + ' '}appointments.`}
                         </p>
                     </div>
-                ) : (
+                ) : isStudent ? (
                     <div className="space-y-3">
                         {shown.map(a => (
                             <AppointmentCard
                                 key={a.id}
                                 appt={a}
-                                isStudent={isStudent}
+                                isStudent={true}
                                 onGiveFeedback={setFeedbackFor}
+                                onFacultyReject={setRejectAppt}
+                                onFacultyReschedule={setRescheduleAppt}
                             />
                         ))}
+                    </div>
+                ) : (
+                    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white">
+                        <table className="min-w-full divide-y divide-gray-100">
+                            <thead>
+                                <tr className="bg-gray-50">
+                                    <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-400">Student</th>
+                                    <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-400">Subject</th>
+                                    <th className="hidden px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-400 lg:table-cell">Requested For</th>
+                                    <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-400">Status</th>
+                                    <th className="px-5 py-3 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-400">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {shown.map(a => (
+                                    <FacultyAppointmentRow
+                                        key={a.id}
+                                        appt={a}
+                                        onReject={setRejectAppt}
+                                        onReschedule={setRescheduleAppt}
+                                    />
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                 )}
             </div>

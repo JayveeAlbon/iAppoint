@@ -66,6 +66,14 @@ class AppointmentController extends Controller
 
         $appointment->loadMissing(['student', 'faculty']);
 
+        Log::info('[approve] Starting notifications', [
+            'appointment_id' => $appointment->id,
+            'student_id'     => $appointment->student?->id,
+            'student_email'  => $appointment->student?->email,
+            'faculty_id'     => $appointment->faculty?->id,
+            'faculty_email'  => $appointment->faculty?->email,
+        ]);
+
         // ── 1. Store in-app (database) notifications — always first, no mail ─
         if ($appointment->student) {
             $appointment->student->notify(
@@ -81,18 +89,37 @@ class AppointmentController extends Controller
         // ── 2. Send email — wrapped so failure never blocks in-app notif ──────
         try {
             if ($appointment->student?->email) {
+                Log::info('[approve] Sending student approval email to ' . $appointment->student->email);
                 $appointment->student->notify(
                     new AppointmentApprovedForStudentNotification($appointment, ['mail'])
                 );
+                Log::info('[approve] Student approval email sent successfully');
+            } else {
+                Log::warning('[approve] Student has no email — skipping mail', ['student_id' => $appointment->student?->id]);
             }
+        } catch (\Throwable $e) {
+            Log::warning('Approval email failed for student: ' . $e->getMessage(), [
+                'appointment_id' => $appointment->id,
+                'student_id'     => $appointment->student?->id,
+                'exception'      => $e,
+            ]);
+        }
+
+        try {
             if ($appointment->faculty?->email) {
+                Log::info('[approve] Sending faculty approval email to ' . $appointment->faculty->email);
                 $appointment->faculty->notify(
                     new AppointmentApprovedForFacultyNotification($appointment, ['mail'])
                 );
+                Log::info('[approve] Faculty approval email sent successfully');
+            } else {
+                Log::warning('[approve] Faculty has no email — skipping mail', ['faculty_id' => $appointment->faculty?->id]);
             }
         } catch (\Throwable $e) {
-            Log::warning('Approval email failed: ' . $e->getMessage(), [
+            Log::warning('Approval email failed for faculty: ' . $e->getMessage(), [
                 'appointment_id' => $appointment->id,
+                'faculty_id'     => $appointment->faculty?->id,
+                'exception'      => $e,
             ]);
         }
 

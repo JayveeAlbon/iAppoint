@@ -46,7 +46,7 @@ class AppointmentApprovedForFacultyNotification extends Notification
         }
 
         return (new MailMessage)
-            ->subject('[iAppoint] New confirmed appointment with a student')
+            ->subject('[iAppoint] New confirmed appointment with a student — ' . $a->title)
             ->greeting("Hello {$notifiable->name},")
             ->line('An appointment involving you has been approved by the administrator.')
             ->line("**Subject:** {$a->title}")
