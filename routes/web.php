@@ -20,63 +20,6 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
-// ── Temporary debug route (admin only) ───────────────────────────────────────
-Route::get('/debug/notifications', function () {
-    if (auth()->user()?->role !== 'admin') abort(403);
-
-    $results = [];
-
-    // Check if notifications table exists
-    try {
-        $count = \Illuminate\Support\Facades\DB::table('notifications')->count();
-        $results['notifications_table'] = "EXISTS — {$count} rows";
-    } catch (\Throwable $e) {
-        $results['notifications_table'] = "MISSING: " . $e->getMessage();
-    }
-
-    // Check faculty users
-    $faculty = \App\Models\User::where('role', 'faculty')->get(['id', 'name', 'email']);
-    $results['faculty'] = $faculty->map(fn($f) => [
-        'id' => $f->id,
-        'name' => $f->name,
-        'email' => $f->email,
-        'notifications_count' => \Illuminate\Support\Facades\DB::table('notifications')
-            ->where('notifiable_id', $f->id)->count(),
-    ]);
-
-    // Try sending a test notification to first faculty
-    $testFaculty = $faculty->first();
-    if ($testFaculty) {
-        try {
-            $testFaculty->notify(new \Illuminate\Notifications\DatabaseNotification([
-                'message' => 'test'
-            ]));
-            $results['test_notify'] = 'sent';
-        } catch (\Throwable $e) {
-            $results['test_notify'] = 'FAILED: ' . $e->getMessage();
-        }
-
-        // Try raw DB insert
-        try {
-            \Illuminate\Support\Facades\DB::table('notifications')->insert([
-                'id' => \Illuminate\Support\Str::uuid(),
-                'type' => 'TestNotification',
-                'notifiable_type' => 'App\Models\User',
-                'notifiable_id' => $testFaculty->id,
-                'data' => json_encode(['test' => true]),
-                'read_at' => null,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
-            $results['raw_insert'] = 'SUCCESS';
-        } catch (\Throwable $e) {
-            $results['raw_insert'] = 'FAILED: ' . $e->getMessage();
-        }
-    }
-
-    return response()->json($results, 200, [], JSON_PRETTY_PRINT);
-})->middleware(['auth', 'active']);
-
 Route::get('/', function () {
     return Inertia::render('Welcome', [
         'canLogin'       => Route::has('login'),

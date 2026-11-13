@@ -26,36 +26,6 @@ class FacultyController extends Controller
         ]);
     }
 
-    public function map(): Response
-    {
-        $today = now()->format('l'); // e.g. "Monday"
-
-        $located = User::where('role', 'faculty')
-            ->whereNotNull('latitude')
-            ->whereNotNull('longitude')
-            ->with(['schedules' => function ($q) use ($today) {
-                $q->where('day', $today)
-                  ->orderBy('start_time')
-                  ->select('id', 'user_id', 'start_time', 'end_time', 'subject', 'room');
-            }])
-            ->select('id', 'name', 'avatar', 'department', 'office_location', 'latitude', 'longitude', 'updated_at')
-            ->get()
-            ->map(fn($f) => array_merge($f->toArray(), ['avatar_url' => $f->avatar_url]));
-
-        $unlocated = User::where('role', 'faculty')
-            ->whereNull('latitude')
-            ->select('id', 'name', 'avatar', 'department', 'office_location')
-            ->orderBy('name')
-            ->get()
-            ->map(fn($f) => array_merge($f->toArray(), ['avatar_url' => $f->avatar_url]));
-
-        return Inertia::render('Faculty/Map', [
-            'faculty'        => $located,
-            'offlineFaculty' => $unlocated,
-            'today'          => $today,
-        ]);
-    }
-
     public function schedule(User $faculty): Response
     {
         abort_if($faculty->role !== 'faculty', 404);

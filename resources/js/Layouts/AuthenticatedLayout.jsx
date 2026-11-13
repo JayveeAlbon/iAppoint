@@ -405,8 +405,6 @@ function Sidebar({ user, notifications }) {
 
 // ── Main layout ────────────────────────────────────────────────────────────────
 
-import FeedbackFab from '@/Components/FeedbackFab';
-
 export default function AuthenticatedLayout({ header, children }) {
     const { auth, notifications } = usePage().props;
     const user = auth.user;
