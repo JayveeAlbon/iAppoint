@@ -15,7 +15,7 @@ class FacultyController extends Controller
     {
         $faculty = User::where(function ($q) {
                 $q->where('role', 'faculty')
-                  ->orWhere(fn($q2) => $q2->where('role', 'admin')->where('is_also_faculty', true));
+                  ->orWhere('role', 'admin');
             })
             ->withCount('schedules')
             ->with('facultyStatus')
@@ -32,7 +32,6 @@ class FacultyController extends Controller
     public function schedule(User $faculty): Response
     {
         abort_if(!$faculty->canActAsFaculty(), 404);
-
         $schedules = $faculty->schedules()
             ->orderByRaw("CASE day WHEN 'Monday' THEN 1 WHEN 'Tuesday' THEN 2 WHEN 'Wednesday' THEN 3 WHEN 'Thursday' THEN 4 WHEN 'Friday' THEN 5 WHEN 'Saturday' THEN 6 ELSE 7 END")
             ->orderBy('start_time')

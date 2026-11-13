@@ -30,6 +30,7 @@ class AppointmentController extends Controller
     {
         $user = $request->user();
 
+        // Admin using faculty mode, or regular faculty → show faculty appointment management
         if ($user->canActAsFaculty()) {
             $appointments = Appointment::where('faculty_id', $user->id)
                 ->with(['student:id,name,avatar,course,year_level', 'feedback'])
@@ -60,7 +61,7 @@ class AppointmentController extends Controller
 
         $faculty = User::where(function ($q) {
                 $q->where('role', 'faculty')
-                  ->orWhere(fn($q2) => $q2->where('role', 'admin')->where('is_also_faculty', true));
+                  ->orWhere('role', 'admin');
             })
             ->whereIn('status', ['active', 'pending'])
             ->select('id', 'name', 'department', 'avatar', 'status')
@@ -114,7 +115,7 @@ class AppointmentController extends Controller
                     $user = \App\Models\User::find($value);
                     if (!$user) { $fail('Selected faculty does not exist.'); return; }
                     $validFaculty = $user->role === 'faculty' && in_array($user->status, ['active', 'pending']);
-                    $validAdmin   = $user->role === 'admin'   && $user->is_also_faculty && $user->status === 'active';
+                    $validAdmin   = $user->role === 'admin'   && $user->status === 'active';
                     if (!$validFaculty && !$validAdmin) {
                         $fail('The selected user is not an available faculty member.');
                     }
