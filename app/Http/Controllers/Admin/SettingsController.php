@@ -27,8 +27,10 @@ class SettingsController extends Controller
             'is_also_faculty' => !$request->user()->is_also_faculty,
         ]);
 
-        $status = $request->user()->fresh()->is_also_faculty ? 'enabled' : 'disabled';
+        $newValue = (bool) $request->user()->fresh()->is_also_faculty;
+        $status   = $newValue ? 'enabled' : 'disabled';
 
-        return back()->with('success', "Faculty mode {$status}. Changes take effect immediately.");
+        return redirect()->route('admin.settings.index')
+            ->with('success', "Faculty mode {$status}. Changes take effect immediately.");
     }
 }

@@ -33,7 +33,10 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $user ? array_merge(
                     $user->load('facultyStatus')->toArray(),
-                    ['avatar_url' => $user->avatar_url]
+                    [
+                        'avatar_url'     => $user->avatar_url,
+                        'is_also_faculty' => (bool) $user->is_also_faculty,
+                    ]
                 ) : null,
             ],
             'notifications' => $user ? $this->buildNotifications($user) : null,
