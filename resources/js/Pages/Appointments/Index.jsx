@@ -810,7 +810,7 @@ function AppointmentCard({ appt, isStudent, onGiveFeedback, onFacultyReject, onF
                 )}
             </div>
 
-            {isStudent && (appt.status === 'pending' || appt.status === 'approved') && (
+            {isStudent && appt.status === 'pending' && (
                 <button
                     onClick={cancel}
                     disabled={cancelling}
