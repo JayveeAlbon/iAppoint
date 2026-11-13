@@ -9,15 +9,18 @@ use App\Notifications\AppointmentApprovedForStudentNotification;
 use App\Notifications\AppointmentRejectedByAdminNotification;
 use App\Notifications\AppointmentRescheduledNotification;
 use App\Services\AuditLogService;
+use App\Services\NotificationLogService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
 
 class AppointmentController extends Controller
 {
-    public function __construct(private readonly AuditLogService $audit) {}
+    public function __construct(
+        private readonly AuditLogService       $audit,
+        private readonly NotificationLogService $logger,
+    ) {}
 
     public function index(Request $request): Response
     {
@@ -67,7 +70,7 @@ class AppointmentController extends Controller
 
         $appointment->loadMissing(['student', 'faculty']);
 
-        // ── 1. Store in-app (database) notifications — always first, no mail ─
+        // ── 1. In-app notifications (database channel — not logged) ───────────
         if ($appointment->student) {
             $appointment->student->notify(
                 new AppointmentApprovedForStudentNotification($appointment, ['database'])
@@ -79,33 +82,23 @@ class AppointmentController extends Controller
             );
         }
 
-        // ── 2. Send email — wrapped so failure never blocks in-app notif ──────
-        try {
-            if ($appointment->student?->email) {
-                $appointment->student->notify(
-                    new AppointmentApprovedForStudentNotification($appointment, ['mail'])
-                );
-            }
-        } catch (\Throwable $e) {
-            Log::warning('Approval email failed for student: ' . $e->getMessage(), [
-                'appointment_id' => $appointment->id,
-                'student_id'     => $appointment->student?->id,
-                'exception'      => $e,
-            ]);
+        // ── 2. Email (logged via NotificationLogService) ──────────────────────
+        if ($appointment->student?->email) {
+            $this->logger->send(
+                $appointment->student,
+                new AppointmentApprovedForStudentNotification($appointment, ['mail']),
+                'appointment.approved.student',
+                $appointment,
+            );
         }
 
-        try {
-            if ($appointment->faculty?->email) {
-                $appointment->faculty->notify(
-                    new AppointmentApprovedForFacultyNotification($appointment, ['mail'])
-                );
-            }
-        } catch (\Throwable $e) {
-            Log::warning('Approval email failed for faculty: ' . $e->getMessage(), [
-                'appointment_id' => $appointment->id,
-                'faculty_id'     => $appointment->faculty?->id,
-                'exception'      => $e,
-            ]);
+        if ($appointment->faculty?->email) {
+            $this->logger->send(
+                $appointment->faculty,
+                new AppointmentApprovedForFacultyNotification($appointment, ['mail']),
+                'appointment.approved.faculty',
+                $appointment,
+            );
         }
 
         return back()->with('success', 'Appointment approved. Notifications sent to student and faculty.');
@@ -131,7 +124,7 @@ class AppointmentController extends Controller
 
         $appointment->loadMissing(['student', 'faculty']);
 
-        // ── In-app notifications ──────────────────────────────────────────────
+        // ── 1. In-app ─────────────────────────────────────────────────────────
         if ($appointment->student) {
             $appointment->student->notify(
                 new AppointmentRejectedByAdminNotification($appointment, ['database'])
@@ -143,31 +136,23 @@ class AppointmentController extends Controller
             );
         }
 
-        // ── Email notifications ───────────────────────────────────────────────
-        try {
-            if ($appointment->student?->email) {
-                $appointment->student->notify(
-                    new AppointmentRejectedByAdminNotification($appointment, ['mail'])
-                );
-            }
-        } catch (\Throwable $e) {
-            Log::warning('Rejection email failed for student: ' . $e->getMessage(), [
-                'appointment_id' => $appointment->id,
-                'exception'      => $e,
-            ]);
+        // ── 2. Email (logged) ─────────────────────────────────────────────────
+        if ($appointment->student?->email) {
+            $this->logger->send(
+                $appointment->student,
+                new AppointmentRejectedByAdminNotification($appointment, ['mail']),
+                'appointment.rejected.admin',
+                $appointment,
+            );
         }
 
-        try {
-            if ($appointment->faculty?->email) {
-                $appointment->faculty->notify(
-                    new AppointmentRejectedByAdminNotification($appointment, ['mail'])
-                );
-            }
-        } catch (\Throwable $e) {
-            Log::warning('Rejection email failed for faculty: ' . $e->getMessage(), [
-                'appointment_id' => $appointment->id,
-                'exception'      => $e,
-            ]);
+        if ($appointment->faculty?->email) {
+            $this->logger->send(
+                $appointment->faculty,
+                new AppointmentRejectedByAdminNotification($appointment, ['mail']),
+                'appointment.rejected.admin',
+                $appointment,
+            );
         }
 
         return back()->with('success', 'Appointment rejected. Student and faculty have been notified.');
@@ -195,7 +180,7 @@ class AppointmentController extends Controller
 
         $appointment->loadMissing(['student', 'faculty']);
 
-        // Database notifications
+        // ── 1. In-app ─────────────────────────────────────────────────────────
         if ($appointment->student) {
             $appointment->student->notify(
                 new AppointmentRescheduledNotification($appointment, ['database'])
@@ -207,22 +192,23 @@ class AppointmentController extends Controller
             );
         }
 
-        // Email notifications
-        try {
-            if ($appointment->student?->email) {
-                $appointment->student->notify(
-                    new AppointmentRescheduledNotification($appointment, ['mail'])
-                );
-            }
-            if ($appointment->faculty?->email) {
-                $appointment->faculty->notify(
-                    new AppointmentRescheduledNotification($appointment, ['mail'])
-                );
-            }
-        } catch (\Throwable $e) {
-            Log::warning('Reschedule email failed: ' . $e->getMessage(), [
-                'appointment_id' => $appointment->id,
-            ]);
+        // ── 2. Email (logged) ─────────────────────────────────────────────────
+        if ($appointment->student?->email) {
+            $this->logger->send(
+                $appointment->student,
+                new AppointmentRescheduledNotification($appointment, ['mail']),
+                'appointment.rescheduled',
+                $appointment,
+            );
+        }
+
+        if ($appointment->faculty?->email) {
+            $this->logger->send(
+                $appointment->faculty,
+                new AppointmentRescheduledNotification($appointment, ['mail']),
+                'appointment.rescheduled',
+                $appointment,
+            );
         }
 
         return back()->with('success', 'Appointment rescheduled. Student and faculty have been notified.');

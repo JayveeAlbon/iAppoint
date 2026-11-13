@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AppointmentController as AdminAppointmentController;
 use App\Http\Controllers\Admin\AuditController as AdminAuditController;
+use App\Http\Controllers\Admin\NotificationLogController as AdminNotificationLogController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AdminFeedbackController;
 use App\Http\Controllers\FacultyFeedbackController;
@@ -118,6 +119,10 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/feedback', [AdminFeedbackController::class, 'index'])->name('feedback.index');
         Route::post('/feedback/{feedback}/resolve', [AdminFeedbackController::class, 'resolve'])->name('feedback.resolve');
         Route::delete('/feedback/{feedback}', [AdminFeedbackController::class, 'destroy'])->name('feedback.destroy');
+        // Notification logs
+        Route::get('/notification-logs', [AdminNotificationLogController::class, 'index'])->name('notification-logs.index');
+        Route::get('/notification-logs/{notificationLog}', [AdminNotificationLogController::class, 'show'])->name('notification-logs.show');
+        Route::post('/notification-logs/{notificationLog}/retry', [AdminNotificationLogController::class, 'retry'])->name('notification-logs.retry');
     });
 });
 

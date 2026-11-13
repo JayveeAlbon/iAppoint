@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\Appointment;
+use App\Models\NotificationLog;
 use App\Models\User;
 use App\Models\UserFeedback;
 use App\Notifications\AppointmentApprovedForFacultyNotification;
@@ -70,6 +71,10 @@ class HandleInertiaRequests extends Middleware
             ? UserFeedback::where('status', 'open')->count()
             : 0;
 
+        $failedNotifications = $user->isAdmin()
+            ? NotificationLog::where('status', 'failed')->count()
+            : 0;
+
         $newRegistrations = $user->isAdmin()
             ? $user->unreadNotifications()
                 ->where('type', UserRegisteredInAppNotification::class)
@@ -109,6 +114,7 @@ class HandleInertiaRequests extends Middleware
             'pending_faculty'              => $pendingFaculty,
             'pending_appointments'         => $pendingAppointments,
             'pending_admin_feedback'       => $pendingAdminFeedback,
+            'failed_notifications'         => $failedNotifications,
             'new_registrations'            => $newRegistrations,
             'approved_appointments'        => $approvedAppointments,
             'faculty_appointment_notifs'   => $facultyAppointmentNotifs,
