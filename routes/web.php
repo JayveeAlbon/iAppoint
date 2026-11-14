@@ -127,8 +127,8 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/feedback', [AdminFeedbackController::class, 'index'])->name('feedback.index');
         Route::post('/feedback/{feedback}/resolve', [AdminFeedbackController::class, 'resolve'])->name('feedback.resolve');
         Route::delete('/feedback/{feedback}', [AdminFeedbackController::class, 'destroy'])->name('feedback.destroy');
-        // Notification logs — merged into unified Notifications page
-        Route::get('/notification-logs', fn() => redirect()->route('notifications.index', ['tab' => 'email_logs']))->name('notification-logs.index');
+        // Notification logs
+        Route::get('/notification-logs', [AdminNotificationLogController::class, 'index'])->name('notification-logs.index');
         Route::get('/notification-logs/{notificationLog}', [AdminNotificationLogController::class, 'show'])->name('notification-logs.show');
         Route::post('/notification-logs/{notificationLog}/retry', [AdminNotificationLogController::class, 'retry'])->name('notification-logs.retry');
     });
