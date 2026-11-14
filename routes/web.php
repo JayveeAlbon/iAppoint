@@ -46,6 +46,7 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllRead'])->name('notifications.mark-all-read');
 
     // ── Faculty directory ─────────────────────────────────────────────────────
     Route::get('/faculty', [FacultyController::class, 'index'])->name('faculty.directory');
@@ -126,8 +127,8 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::get('/feedback', [AdminFeedbackController::class, 'index'])->name('feedback.index');
         Route::post('/feedback/{feedback}/resolve', [AdminFeedbackController::class, 'resolve'])->name('feedback.resolve');
         Route::delete('/feedback/{feedback}', [AdminFeedbackController::class, 'destroy'])->name('feedback.destroy');
-        // Notification logs
-        Route::get('/notification-logs', [AdminNotificationLogController::class, 'index'])->name('notification-logs.index');
+        // Notification logs — index redirects to unified Notifications page
+        Route::get('/notification-logs', fn() => redirect()->route('notifications.index', ['tab' => 'email_logs']))->name('notification-logs.index');
         Route::get('/notification-logs/{notificationLog}', [AdminNotificationLogController::class, 'show'])->name('notification-logs.show');
         Route::post('/notification-logs/{notificationLog}/retry', [AdminNotificationLogController::class, 'retry'])->name('notification-logs.retry');
     });
