@@ -11,10 +11,19 @@ echo "PHP version:   $(php -r 'echo PHP_VERSION;')"
 
 cd /var/www/html
 
-# Clear build-time cache
-echo "--- Clearing build-time config cache ---"
-php artisan config:clear  || echo "WARN: config:clear failed"
-php artisan cache:clear   || echo "WARN: cache:clear failed"
+# Fix storage permissions
+echo "--- Fixing storage permissions ---"
+mkdir -p storage/logs storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache
+chmod -R 777 storage bootstrap/cache
+touch storage/logs/laravel.log
+chmod 666 storage/logs/laravel.log
+
+# Clear ALL cached config from build time before anything else
+echo "--- Clearing build-time cache ---"
+php artisan config:clear  2>/dev/null || true
+php artisan cache:clear   2>/dev/null || true
+php artisan route:clear   2>/dev/null || true
+php artisan view:clear    2>/dev/null || true
 
 # Test database connection
 echo "--- Testing database connection ---"
