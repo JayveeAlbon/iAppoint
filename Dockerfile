@@ -5,12 +5,12 @@ FROM node:20-alpine AS frontend
 
 WORKDIR /app
 
+# Cache bust: change this value to force a full npm rebuild
+ARG BUILD_VERSION=2
 COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY . .
-# Force rebuild of assets on every deploy
-ARG CACHEBUST=1
 RUN npm run build
 
 # ─────────────────────────────────────────────────────────────────────────────
