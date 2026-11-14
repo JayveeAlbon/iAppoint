@@ -5,13 +5,14 @@ FROM node:20-alpine AS frontend
 
 WORKDIR /app
 
-# Cache bust: change this value to force a full npm rebuild
-ARG BUILD_VERSION=2
 COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY . .
-RUN npm run build
+
+# Increment BUILD_VERSION to force a fresh npm run build on Render
+ARG BUILD_VERSION=4
+RUN echo "Build version: $BUILD_VERSION" && npm run build
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Stage 2 — PHP application
