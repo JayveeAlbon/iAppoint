@@ -9,6 +9,8 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY . .
+# Force rebuild of assets on every deploy
+ARG CACHEBUST=1
 RUN npm run build
 
 # ─────────────────────────────────────────────────────────────────────────────
