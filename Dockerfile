@@ -6,7 +6,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # Stage 2 — PHP application
 # ─────────────────────────────────────────────────────────────────────────────
-FROM php:8.2-fpm-alpine AS app
+FROM php:8.2.27-fpm-alpine AS app
 
 # Install system dependencies
 RUN apk add --no-cache \
