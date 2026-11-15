@@ -168,60 +168,6 @@ export default function AdminDashboardOverview({
                     </ResponsiveContainer>
                 </Card>
 
-                {/* ── Area chart — messages ────────────────────────────────── */}
-                <Card title="Message Activity — Last 30 Days">
-                    <ResponsiveContainer width="100%" height={220}>
-                        <AreaChart data={messageTrend} margin={{ top: 4, right: 4, bottom: 0, left: -20 }}>
-                            <defs>
-                                <linearGradient id="msgGrad" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#6366F1" stopOpacity={0.2} />
-                                    <stop offset="95%" stopColor="#6366F1" stopOpacity={0} />
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-                            <XAxis dataKey="date" tick={{ fontSize: 9, fill: '#9CA3AF' }}
-                                interval={Math.floor(messageTrend.length / 8)} />
-                            <YAxis tick={{ fontSize: 10, fill: '#9CA3AF' }} allowDecimals={false} />
-                            <Tooltip content={<CustomTooltip />} />
-                            <Area type="monotone" dataKey="count" name="Messages"
-                                stroke="#6366F1" strokeWidth={2} fill="url(#msgGrad)" />
-                        </AreaChart>
-                    </ResponsiveContainer>
-                </Card>
-
-                {/* ── Top faculty ──────────────────────────────────────────── */}
-                <Card title="Top Faculty by Schedule Count">
-                        {topFaculty.length === 0 ? (
-                            <p className="py-4 text-sm text-gray-400">No faculty with schedules yet.</p>
-                        ) : (
-                            <div className="space-y-3">
-                                {topFaculty.map((f, i) => (
-                                    <div key={f.id} className="flex items-center gap-3">
-                                        <span className="w-5 text-center text-[10px] font-bold text-gray-400">{i + 1}</span>
-                                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gray-200 text-[10px] font-semibold text-gray-600">
-                                            {f.name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()}
-                                        </div>
-                                        <div className="min-w-0 flex-1">
-                                            <p className="truncate text-sm font-medium text-gray-900">{f.name}</p>
-                                            <p className="text-xs text-gray-400">{f.department ?? '—'}</p>
-                                        </div>
-                                        <div className="flex items-center gap-1.5">
-                                            <span className={`h-2 w-2 rounded-full ${f.faculty_status?.status === 'busy' ? 'bg-amber-400' : f.faculty_status ? 'bg-green-500' : 'bg-gray-300'}`} />
-                                            <span className="text-sm font-semibold text-gray-700">{f.schedules_count}</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </Card>
-
-                {/* ── Location + Catering row ──────────────────────────────── */}
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    <StatTile label="Faculty Sharing Location" value={locationStats.sharing}   color={COLORS.active} />
-                    <StatTile label="Location Consent Given"   value={locationStats.consented} color="#6366F1" />
-                    <StatTile label="Active Catering Sessions" value={cateringStats.active}    color={COLORS.pending} />
-                </div>
-
                 {/* ── Messages quick stats ─────────────────────────────────── */}
                 <div className="grid gap-3 sm:grid-cols-3">
                     <StatTile label="Messages (7d)"  value={messageStats.last_7_days}  color={COLORS.messages} />
