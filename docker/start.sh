@@ -11,12 +11,18 @@ echo "PHP version:   $(php -r 'echo PHP_VERSION;')"
 
 cd /var/www/html
 
-# Fix storage permissions
+# Fix storage permissions FIRST
 echo "--- Fixing storage permissions ---"
 mkdir -p storage/logs storage/framework/cache storage/framework/sessions storage/framework/views bootstrap/cache
 chmod -R 777 storage bootstrap/cache
 touch storage/logs/laravel.log
 chmod 666 storage/logs/laravel.log
+
+# Regenerate autoloader + package discovery BEFORE anything else
+# This creates bootstrap/cache/packages.php and services.php
+echo "--- Regenerating autoloader and discovering packages ---"
+composer dump-autoload --optimize --no-interaction 2>&1 || true
+php artisan package:discover --ansi 2>&1 || true
 
 # Clear ALL cached config from build time before anything else
 echo "--- Clearing build-time cache ---"
@@ -47,14 +53,6 @@ php artisan migrate --force --no-interaction 2>&1 || echo "WARN: migrate failed"
 # Seed default users
 echo "--- Seeding default users ---"
 php artisan db:seed --force --no-interaction 2>&1 || echo "WARN: seed failed"
-
-# Regenerate autoloader with scripts now that env vars are available
-echo "--- Regenerating autoloader ---"
-composer dump-autoload --optimize --no-interaction 2>&1 || echo "WARN: dump-autoload failed"
-
-# Run package discovery and optimization (env available here)
-echo "--- Running package:discover ---"
-php artisan package:discover --ansi 2>&1 || echo "WARN: package:discover failed"
 
 # Ensure storage link exists
 php artisan storage:link --force 2>/dev/null || true
