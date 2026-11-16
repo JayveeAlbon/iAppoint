@@ -28,22 +28,12 @@ COPY --from=composer:2.8 /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-scripts --no-autoloader --no-interaction
+
+# Install deps — no scripts prevents artisan calls during build
+RUN composer install --no-dev --no-scripts --optimize-autoloader --no-interaction
 
 COPY . .
 COPY --from=frontend /app/public/build ./public/build
-
-# Write a valid .env file for the build stage using printf (works on Alpine)
-RUN printf "APP_NAME=iAppoint\nAPP_ENV=production\nAPP_KEY=base64:dGVtcGtleWZvcmJ1aWxkb25seWRvbm90dXNlMTIzNDU=\nAPP_DEBUG=false\nAPP_URL=http://localhost\nDB_CONNECTION=sqlite\nDB_DATABASE=/tmp/build.sqlite\nLOG_CHANNEL=stderr\n" > .env
-
-# Touch the SQLite DB so DB-less providers don't fail
-RUN touch /tmp/build.sqlite
-
-# Run autoload + package:discover with the temp .env
-RUN composer dump-autoload --optimize --no-interaction
-
-# Remove temp .env — Render provides real env vars at runtime
-RUN rm -f .env /tmp/build.sqlite
 
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \

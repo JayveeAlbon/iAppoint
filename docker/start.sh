@@ -48,6 +48,10 @@ php artisan migrate --force --no-interaction 2>&1 || echo "WARN: migrate failed"
 echo "--- Seeding default users ---"
 php artisan db:seed --force --no-interaction 2>&1 || echo "WARN: seed failed"
 
+# Regenerate autoloader with scripts now that env vars are available
+echo "--- Regenerating autoloader ---"
+composer dump-autoload --optimize --no-interaction 2>&1 || echo "WARN: dump-autoload failed"
+
 # Run package discovery and optimization (env available here)
 echo "--- Running package:discover ---"
 php artisan package:discover --ansi 2>&1 || echo "WARN: package:discover failed"
