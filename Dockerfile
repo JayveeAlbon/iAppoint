@@ -28,20 +28,20 @@ COPY --from=composer:2.8 /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 
 COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-scripts --no-autoloader --no-interaction
 
-# Install deps: skip scripts AND skip autoloader (avoids artisan calls)
-RUN composer install \
-    --no-dev \
-    --no-scripts \
-    --no-autoloader \
-    --no-interaction
-
-# Copy source
+# Copy all source files
 COPY . .
 COPY --from=frontend /app/public/build ./public/build
 
-# Generate ONLY the classmap — no scripts, no artisan
-RUN composer dump-autoload --optimize --classmap-authoritative --no-scripts --no-interaction
+# Create a minimal .env so artisan can bootstrap during package:discover
+RUN echo "APP_NAME=iAppoint\nAPP_ENV=production\nAPP_KEY=base64:dGVtcGtleWZvcmJ1aWxkb25seWRvbm90dXNl\nAPP_DEBUG=false\nAPP_URL=http://localhost\nDB_CONNECTION=mysql\nDB_HOST=localhost\nDB_PORT=3306\nDB_DATABASE=iappoint\nDB_USERNAME=root\nDB_PASSWORD=\nLOG_CHANNEL=stderr" > .env
+
+# Now run composer dump-autoload WITH scripts (runs package:discover safely)
+RUN composer dump-autoload --optimize --no-interaction
+
+# Remove the temp .env — real one comes from Render env vars at runtime
+RUN rm .env
 
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
