@@ -40,8 +40,8 @@ COPY . .
 # Copy freshly built assets from Stage 1
 COPY --from=frontend /app/public/build ./public/build
 
-# Generate autoloader — no scripts so no artisan calls during build
-RUN composer dump-autoload --optimize --no-interaction
+# Generate autoloader only — no scripts, no artisan calls during build
+RUN composer dump-autoload --optimize --no-scripts --no-interaction
 
 # Permissions
 RUN chown -R www-data:www-data /var/www/html \
