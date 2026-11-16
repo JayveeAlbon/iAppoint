@@ -30,7 +30,7 @@ COPY --from=composer:2.8 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Install PHP deps — no scripts, no autoload (we'll do it after COPY)
+# Install PHP deps — no scripts, no autoloader yet
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --no-scripts --no-autoloader --no-interaction
 
@@ -40,8 +40,11 @@ COPY . .
 # Copy freshly built assets from Stage 1
 COPY --from=frontend /app/public/build ./public/build
 
-# Generate autoloader only — no scripts, no artisan calls during build
-RUN composer dump-autoload --optimize --no-scripts --no-interaction
+# Generate autoloader AND run package:discover with a dummy env
+# APP_KEY is needed so Laravel can bootstrap during package:discover
+RUN APP_KEY=base64:dummykeyfordockerbuildonly000000000000000= \
+    APP_ENV=production \
+    composer dump-autoload --optimize --no-interaction
 
 # Permissions
 RUN chown -R www-data:www-data /var/www/html \
