@@ -293,7 +293,7 @@ function UserDropdown({ user }) {
     );
 }
 
-// ── Sidebar ────────────────────────────────────────────────────────────────────
+// ── Sidebar ──────────────────────────────────────────────────────────────────── v2
 
 function Sidebar({ user, notifications }) {
     const isAdmin      = user.role === 'admin';
@@ -381,7 +381,7 @@ function Sidebar({ user, notifications }) {
                         <NavItem href={route('admin.users.index')}        icon={<IconUsers />}    label="Users"        badge={notifications?.pending_faculty ?? 0} active={route().current('admin.users.*')} />
                         <NavItem href={route('admin.appointments.index')} icon={<IconCalendar />} label="Appointments" badge={notifications?.pending_appointments ?? 0} active={route().current('admin.appointments.*')} />
                         <NavItem href={route('admin.feedback.index')}     icon={<IconMessage />}  label="Feedback"     badge={notifications?.pending_admin_feedback ?? 0} active={route().current('admin.feedback.*')} />
-                        <NavItem href={route('admin.audit.index')}        icon={<IconFileText />} label="History"      active={route().current('admin.audit.*')} />
+                        <NavItem href={route('admin.audit.index')}        icon={<IconFileText />} label="Audit Log"    active={route().current('admin.audit.*')} />
                         <NavItem href={route('notifications.index')}      icon={<IconBell />}     label="Notifications" badge={(notifications?.total ?? 0) + (notifications?.failed_notifications ?? 0)} active={route().current('notifications.*')} />
                         <NavItem href={route('admin.settings.index')}     icon={<IconSettings />} label="Settings"     active={route().current('admin.settings.*')} />
                     </NavSection>
