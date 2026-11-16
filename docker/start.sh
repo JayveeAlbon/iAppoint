@@ -48,11 +48,10 @@ php artisan migrate --force --no-interaction 2>&1 || echo "WARN: migrate failed"
 echo "--- Seeding default users ---"
 php artisan db:seed --force --no-interaction 2>&1 || echo "WARN: seed failed"
 
-# Cache config/routes/views
-echo "--- Caching config ---"
-php artisan config:cache  || echo "WARN: config:cache failed"
-php artisan route:cache   || echo "WARN: route:cache failed"
-php artisan view:cache    || echo "WARN: view:cache failed"
+# Cache config/routes/views — skipped on Render (causes env() bootstrap errors)
+# php artisan config:cache
+# php artisan route:cache
+# php artisan view:cache
 
 # Ensure storage link exists
 php artisan storage:link --force 2>/dev/null || true
