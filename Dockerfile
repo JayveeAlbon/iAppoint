@@ -30,18 +30,20 @@ WORKDIR /var/www/html
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --no-scripts --no-autoloader --no-interaction
 
-# Copy all source files
 COPY . .
 COPY --from=frontend /app/public/build ./public/build
 
-# Create a minimal .env so artisan can bootstrap during package:discover
-RUN echo "APP_NAME=iAppoint\nAPP_ENV=production\nAPP_KEY=base64:dGVtcGtleWZvcmJ1aWxkb25seWRvbm90dXNl\nAPP_DEBUG=false\nAPP_URL=http://localhost\nDB_CONNECTION=mysql\nDB_HOST=localhost\nDB_PORT=3306\nDB_DATABASE=iappoint\nDB_USERNAME=root\nDB_PASSWORD=\nLOG_CHANNEL=stderr" > .env
+# Write a valid .env file for the build stage using printf (works on Alpine)
+RUN printf "APP_NAME=iAppoint\nAPP_ENV=production\nAPP_KEY=base64:dGVtcGtleWZvcmJ1aWxkb25seWRvbm90dXNlMTIzNDU=\nAPP_DEBUG=false\nAPP_URL=http://localhost\nDB_CONNECTION=sqlite\nDB_DATABASE=/tmp/build.sqlite\nLOG_CHANNEL=stderr\n" > .env
 
-# Now run composer dump-autoload WITH scripts (runs package:discover safely)
+# Touch the SQLite DB so DB-less providers don't fail
+RUN touch /tmp/build.sqlite
+
+# Run autoload + package:discover with the temp .env
 RUN composer dump-autoload --optimize --no-interaction
 
-# Remove the temp .env — real one comes from Render env vars at runtime
-RUN rm .env
+# Remove temp .env — Render provides real env vars at runtime
+RUN rm -f .env /tmp/build.sqlite
 
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
