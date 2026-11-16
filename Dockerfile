@@ -1,7 +1,15 @@
 # ─────────────────────────────────────────────────────────────────────────────
-# Stage 1 — Frontend assets are pre-built and committed to the repo
-# No npm build needed — assets are in public/build/
+# Stage 1 — Build frontend assets (always runs fresh — no layer caching)
 # ─────────────────────────────────────────────────────────────────────────────
+FROM node:20-alpine AS frontend
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . .
+RUN npm run build
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Stage 2 — PHP application
@@ -50,10 +58,11 @@ RUN composer install \
     --no-scripts \
     --no-interaction
 
-# Copy application source
+# Copy application source (includes public/build from repo as fallback)
 COPY . .
 
-# public/build is already included via COPY . . above (pre-built assets committed to repo)
+# Override with freshly built frontend assets from Stage 1
+COPY --from=frontend /app/public/build ./public/build
 
 # Run composer post-install scripts
 RUN composer run-script post-autoload-dump
