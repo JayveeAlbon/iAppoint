@@ -293,7 +293,7 @@ function UserDropdown({ user }) {
     );
 }
 
-// ── Sidebar ──────────────────────────────────────────────────────────────────── v2
+// ── Sidebar ──────────────────────────────────────────────────────────────────── r1
 
 function Sidebar({ user, notifications }) {
     const isAdmin      = user.role === 'admin';
@@ -305,7 +305,7 @@ function Sidebar({ user, notifications }) {
         isAdmin   ? 'Administrator · Faculty' :
         isFaculty ? 'Faculty'                 : 'Student';
 
-    const unreadMessages = notifications?.unread_messages ?? 0;
+    const unreadMessages = (notifications?.unread_messages ?? 0) + 0;
 
     return (
         <aside className="flex h-full w-60 flex-shrink-0 flex-col bg-[#1D3B6E] text-white shadow-xl">
