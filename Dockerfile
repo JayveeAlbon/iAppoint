@@ -64,8 +64,8 @@ COPY . .
 # Override with freshly built frontend assets from Stage 1
 COPY --from=frontend /app/public/build ./public/build
 
-# Run composer post-install scripts
-RUN composer run-script post-autoload-dump
+# Run composer post-install scripts with no-scripts to avoid env() errors during build
+RUN composer dump-autoload --optimize --no-interaction
 
 # Set correct permissions
 RUN chown -R www-data:www-data /var/www/html \
