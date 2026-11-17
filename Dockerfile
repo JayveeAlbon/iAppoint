@@ -64,8 +64,14 @@ COPY . .
 # Copy built frontend assets from Stage 1
 COPY --from=frontend /app/public/build ./public/build
 
-# bootstrap/cache/packages.php and services.php are pre-committed to the repo
-# They were generated with php artisan package:discover locally
+# Run composer post-install scripts (package:discover)
+# This works now because config/logging.php no longer calls app() during config load
+RUN APP_KEY=base64:dGVtcGtleWZvcmJ1aWxkb25seXVzZTMyY2hhcnM= \
+    APP_ENV=production \
+    DB_CONNECTION=sqlite \
+    DB_DATABASE=:memory: \
+    LOG_CHANNEL=stderr \
+    composer run-script post-autoload-dump
 
 # Set correct permissions
 RUN chown -R www-data:www-data /var/www/html \
