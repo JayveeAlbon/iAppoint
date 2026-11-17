@@ -16,7 +16,7 @@ RUN npm run build
 # ─────────────────────────────────────────────────────────────────────────────
 FROM php:8.2-fpm-alpine AS app
 
-# Install system dependencies
+# Install system dependencies (v2)
 RUN apk add --no-cache \
     nginx \
     supervisor \
