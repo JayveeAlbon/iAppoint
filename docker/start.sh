@@ -17,12 +17,8 @@ chmod -R 777 storage bootstrap/cache
 touch storage/logs/laravel.log
 chmod 666 storage/logs/laravel.log
 
-# Clear build-time cache
-echo "--- Clearing cache ---"
-php artisan config:clear 2>/dev/null || true
-php artisan cache:clear  2>/dev/null || true
-php artisan route:clear  2>/dev/null || true
-php artisan view:clear   2>/dev/null || true
+# Note: config/route/view cache commands removed - not needed and cause bootstrap issues
+# The committed bootstrap/cache/services.php handles package discovery
 
 # Run migrations
 echo "--- Running migrations ---"
