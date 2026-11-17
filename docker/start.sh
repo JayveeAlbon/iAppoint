@@ -1,4 +1,4 @@
-#!/bin/sh
+﻿#!/bin/sh
 
 echo "=== iAppoint Starting ==="
 echo "APP_ENV:       ${APP_ENV}"
@@ -16,9 +16,6 @@ mkdir -p storage/logs storage/framework/cache storage/framework/sessions storage
 chmod -R 777 storage bootstrap/cache
 touch storage/logs/laravel.log
 chmod 666 storage/logs/laravel.log
-
-# Note: config/route/view cache commands removed - not needed and cause bootstrap issues
-# The committed bootstrap/cache/services.php handles package discovery
 
 # Run migrations
 echo "--- Running migrations ---"
