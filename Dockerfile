@@ -36,8 +36,8 @@ RUN composer install --no-dev --no-scripts --no-autoloader --no-interaction
 COPY . .
 COPY --from=frontend /app/public/build ./public/build
 
-# Generate autoloader classmap only (no scripts = no package:discover)
-RUN composer dump-autoload --optimize --no-scripts --no-interaction
+# Generate autoloader (no scripts = no package:discover, that runs in start.sh)
+RUN composer dump-autoload --no-scripts --no-interaction
 
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
