@@ -29,18 +29,11 @@ WORKDIR /var/www/html
 
 COPY composer.json composer.lock ./
 
-# Install prod deps without scripts (avoids package:discover which needs APP_KEY)
-RUN composer install --no-dev --no-scripts --no-autoloader --no-interaction
+# Install prod deps — no scripts (avoids artisan calls that need DB/APP_KEY)
+RUN composer install --no-dev --no-scripts --optimize-autoloader --no-interaction
 
-# Copy source
 COPY . .
 COPY --from=frontend /app/public/build ./public/build
-
-# Create a temporary .env just for the build so package:discover works
-RUN cp .env.example .env && \
-    php artisan key:generate --force && \
-    composer dump-autoload --optimize --no-interaction && \
-    rm .env
 
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
