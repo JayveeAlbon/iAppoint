@@ -28,16 +28,10 @@ COPY --from=composer:2.8 /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 
 COPY composer.json composer.lock ./
+RUN composer install --no-dev --no-interaction
 
-# Install production dependencies only — no scripts, no autoloader
-RUN composer install --no-dev --no-scripts --no-autoloader --no-interaction
-
-# Copy application source
 COPY . .
 COPY --from=frontend /app/public/build ./public/build
-
-# Generate autoloader (no scripts = no package:discover, that runs in start.sh)
-RUN composer dump-autoload --no-scripts --no-interaction
 
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
