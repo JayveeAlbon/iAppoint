@@ -68,7 +68,8 @@ class AppointmentController extends Controller
             'faculty' => $appointment->faculty->name ?? null,
         ]);
 
-        $appointment->loadMissing(['student', 'faculty']);
+        // Force fresh load with email included (audit above may have cached without email)
+        $appointment->load(['student', 'faculty']);
 
         // ── 1. In-app notifications (database channel — not logged) ───────────
         if ($appointment->student) {
@@ -122,7 +123,8 @@ class AppointmentController extends Controller
             'faculty' => $appointment->faculty->name ?? null,
         ]);
 
-        $appointment->loadMissing(['student', 'faculty']);
+        // Force fresh load with email included
+        $appointment->load(['student', 'faculty']);
 
         // ── 1. In-app ─────────────────────────────────────────────────────────
         if ($appointment->student) {
@@ -178,7 +180,8 @@ class AppointmentController extends Controller
             'new_schedule' => $data['requested_at'],
         ]);
 
-        $appointment->loadMissing(['student', 'faculty']);
+        // Force fresh load with email included
+        $appointment->load(['student', 'faculty']);
 
         // ── 1. In-app ─────────────────────────────────────────────────────────
         if ($appointment->student) {
