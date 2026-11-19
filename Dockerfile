@@ -29,23 +29,15 @@ WORKDIR /var/www/html
 
 COPY composer.json composer.lock ./
 
-# Step 1: Install ALL packages including dev to generate correct services.php
-RUN composer install --no-scripts --no-autoloader --no-interaction
+# Install production dependencies only — no scripts, no autoloader
+RUN composer install --no-dev --no-scripts --no-autoloader --no-interaction
 
 # Copy application source
 COPY . .
 COPY --from=frontend /app/public/build ./public/build
 
-# Step 2: Generate autoloader + services.php with ALL packages present
-RUN APP_KEY=base64:dGVtcGtleWZvcmJ1aWxkb25seXVzZTMyY2hhcnM= \
-    APP_ENV=production \
-    DB_CONNECTION=sqlite \
-    DB_DATABASE=:memory: \
-    LOG_CHANNEL=stderr \
-    composer dump-autoload --optimize --no-interaction
-
-# Step 3: Remove dev packages AFTER services.php is generated
-RUN composer install --no-dev --no-scripts --optimize-autoloader --no-interaction
+# Generate autoloader classmap only (no scripts = no package:discover)
+RUN composer dump-autoload --optimize --no-scripts --no-interaction
 
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
