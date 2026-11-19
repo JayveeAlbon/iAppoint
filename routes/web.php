@@ -22,6 +22,22 @@ use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
+Route::get('/debug/notif-error', function () {
+    abort_if(auth()->user()?->role !== 'admin', 403);
+    try {
+        $controller = new \App\Http\Controllers\NotificationController();
+        $request = request();
+        return $controller->index($request);
+    } catch (\Throwable $e) {
+        return response()->json([
+            'error'   => $e->getMessage(),
+            'file'    => $e->getFile(),
+            'line'    => $e->getLine(),
+            'trace'   => collect($e->getTrace())->take(5)->map(fn($t) => ($t['file'] ?? '') . ':' . ($t['line'] ?? '')),
+        ]);
+    }
+})->middleware(['auth', 'active']);
+
 Route::get('/', function () {
     return Inertia::render('Welcome', [
         'canLogin'       => Route::has('login'),
