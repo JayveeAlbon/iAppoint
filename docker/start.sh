@@ -17,9 +17,19 @@ chmod -R 777 storage bootstrap/cache
 touch storage/logs/laravel.log
 chmod 666 storage/logs/laravel.log
 
+# Backup the committed services.php BEFORE migrations can overwrite it
+# php artisan migrate triggers package:discover which regenerates services.php
+# but without a full env the regenerated version is broken
+cp bootstrap/cache/services.php /tmp/services.php.bak 2>/dev/null || true
+cp bootstrap/cache/packages.php /tmp/packages.php.bak 2>/dev/null || true
+
 # Run migrations
 echo "--- Running migrations ---"
 php artisan migrate --force --no-interaction 2>&1 || echo "WARN: migrate failed"
+
+# Restore the correct services.php after migrations may have overwritten it
+cp /tmp/services.php.bak bootstrap/cache/services.php 2>/dev/null || true
+cp /tmp/packages.php.bak bootstrap/cache/packages.php 2>/dev/null || true
 
 # Seed default users
 echo "--- Seeding ---"
@@ -31,7 +41,7 @@ php artisan storage:link --force 2>/dev/null || true
 # Scheduler
 (while true; do php artisan schedule:run --no-interaction >> /dev/null 2>&1; sleep 60; done) &
 
-# Keep-alive: ping every 5 minutes internally AND externally to prevent Render free tier spin-down
+# Keep-alive: ping every 5 minutes to prevent Render free tier spin-down
 (while true; do \
     sleep 270; \
     wget -q -O /dev/null http://localhost:8080/up 2>/dev/null || true; \
