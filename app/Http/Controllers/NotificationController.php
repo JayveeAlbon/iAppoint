@@ -100,24 +100,21 @@ class NotificationController extends Controller
         $logCounts = null;
         if ($user->isAdmin()) {
             try {
-                // Check table exists before querying
-                if (\Illuminate\Support\Facades\Schema::hasTable('notification_logs')) {
-                    $logQuery = NotificationLog::orderByDesc('created_at');
+                $logQuery = NotificationLog::orderByDesc('created_at');
 
-                    if ($filter === 'unread') {
-                        $logQuery->where('status', 'failed');
-                    } elseif ($filter === 'read') {
-                        $logQuery->where('status', 'sent');
-                    }
-
-                    $emailLogs = $logQuery->paginate(30)->withQueryString();
-                    $logCounts = [
-                        'total'   => NotificationLog::count(),
-                        'sent'    => NotificationLog::where('status', 'sent')->count(),
-                        'failed'  => NotificationLog::where('status', 'failed')->count(),
-                        'pending' => NotificationLog::where('status', 'pending')->count(),
-                    ];
+                if ($filter === 'unread') {
+                    $logQuery->where('status', 'failed');
+                } elseif ($filter === 'read') {
+                    $logQuery->where('status', 'sent');
                 }
+
+                $emailLogs = $logQuery->paginate(30)->withQueryString();
+                $logCounts = [
+                    'total'   => NotificationLog::count(),
+                    'sent'    => NotificationLog::where('status', 'sent')->count(),
+                    'failed'  => NotificationLog::where('status', 'failed')->count(),
+                    'pending' => NotificationLog::where('status', 'pending')->count(),
+                ];
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::error('NotificationController email logs failed: ' . $e->getMessage());
             }
@@ -232,49 +229,57 @@ class NotificationController extends Controller
             });
 
             // Pending appointments
-            Appointment::with(['student:id,name', 'faculty:id,name'])
-                ->where('status', 'pending')
-                ->latest()
-                ->limit(50)
-                ->get()
-                ->each(function (Appointment $appt) use ($items) {
-                    $items->push([
-                        'id'          => 'appt-' . $appt->id,
-                        'type'        => 'Pending Appointment',
-                        'group_key'   => 'Pending Appointment_pending',
-                        'title'       => 'Appointment request',
-                        'description' => sprintf(
-                            '%s requested an appointment with %s: %s',
-                            $appt->student?->name ?? 'A student',
-                            $appt->faculty?->name ?? 'a faculty member',
-                            $appt->title,
-                        ),
-                        'created_at'  => $appt->created_at,
-                        'href'        => route('admin.appointments.index'),
-                        'read'        => false,
-                        'raw_type'    => 'pending_appointment',
-                    ]);
-                });
+            try {
+                Appointment::with(['student:id,name', 'faculty:id,name'])
+                    ->where('status', 'pending')
+                    ->latest()
+                    ->limit(50)
+                    ->get()
+                    ->each(function (Appointment $appt) use ($items) {
+                        $items->push([
+                            'id'          => 'appt-' . $appt->id,
+                            'type'        => 'Pending Appointment',
+                            'group_key'   => 'Pending Appointment_pending',
+                            'title'       => 'Appointment request',
+                            'description' => sprintf(
+                                '%s requested an appointment with %s: %s',
+                                $appt->student?->name ?? 'A student',
+                                $appt->faculty?->name ?? 'a faculty member',
+                                $appt->title,
+                            ),
+                            'created_at'  => $appt->created_at,
+                            'href'        => route('admin.appointments.index'),
+                            'read'        => false,
+                            'raw_type'    => 'pending_appointment',
+                        ]);
+                    });
+            } catch (\Throwable $e) {
+                // Skip if appointments query fails
+            }
 
             // Open feedback
-            UserFeedback::with('user:id,name')
-                ->where('status', 'open')
-                ->latest()
-                ->limit(50)
-                ->get()
-                ->each(function (UserFeedback $fb) use ($items) {
-                    $items->push([
-                        'id'          => 'fb-' . $fb->id,
-                        'type'        => 'Open Feedback',
-                        'group_key'   => 'Open Feedback_open',
-                        'title'       => 'New feedback submitted',
-                        'description' => sprintf('%s: %s', $fb->user?->name ?? 'A user', $fb->subject),
-                        'created_at'  => $fb->created_at,
-                        'href'        => route('admin.feedback.index'),
-                        'read'        => false,
-                        'raw_type'    => 'feedback',
-                    ]);
-                });
+            try {
+                UserFeedback::with('user:id,name')
+                    ->where('status', 'open')
+                    ->latest()
+                    ->limit(50)
+                    ->get()
+                    ->each(function (UserFeedback $fb) use ($items) {
+                        $items->push([
+                            'id'          => 'fb-' . $fb->id,
+                            'type'        => 'Open Feedback',
+                            'group_key'   => 'Open Feedback_open',
+                            'title'       => 'New feedback submitted',
+                            'description' => sprintf('%s: %s', $fb->user?->name ?? 'A user', $fb->subject),
+                            'created_at'  => $fb->created_at,
+                            'href'        => route('admin.feedback.index'),
+                            'read'        => false,
+                            'raw_type'    => 'feedback',
+                        ]);
+                    });
+            } catch (\Throwable $e) {
+                // Skip if feedback query fails
+            }
         }
 
         return $items->sortByDesc(fn($n) => $n['created_at']?->getTimestamp());
