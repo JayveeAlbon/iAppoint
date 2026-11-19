@@ -31,8 +31,12 @@ php artisan storage:link --force 2>/dev/null || true
 # Scheduler
 (while true; do php artisan schedule:run --no-interaction >> /dev/null 2>&1; sleep 60; done) &
 
-# Keep-alive ping every 14 minutes to prevent Render free tier spin-down
-(while true; do sleep 840; wget -q -O /dev/null http://localhost:8080/up 2>/dev/null || true; done) &
+# Keep-alive: ping every 5 minutes internally AND externally to prevent Render free tier spin-down
+(while true; do \
+    sleep 270; \
+    wget -q -O /dev/null http://localhost:8080/up 2>/dev/null || true; \
+    wget -q -O /dev/null "${APP_URL}/up" 2>/dev/null || true; \
+done) &
 
 echo "--- Starting supervisord ---"
 exec /usr/bin/supervisord -c /etc/supervisord.conf
