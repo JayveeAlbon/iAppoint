@@ -46,11 +46,16 @@ class NotificationController extends Controller
     public function index(Request $request): Response
     {
         $user   = $request->user();
-        $filter = $request->query('filter', 'all'); // all | unread | read
-        $tab    = $request->query('tab', 'notifications'); // notifications | email_logs
+        $filter = $request->query('filter', 'all');
+        $tab    = $request->query('tab', 'notifications');
 
         // ── Build in-app notification items ───────────────────────────────
-        $rawNotifs = $this->getRawNotifications($user);
+        try {
+            $rawNotifs = $this->getRawNotifications($user);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('NotificationController::getRawNotifications failed: ' . $e->getMessage());
+            $rawNotifs = collect();
+        }
 
         // Apply read/unread filter
         $filtered = match ($filter) {
@@ -94,21 +99,25 @@ class NotificationController extends Controller
         $emailLogs = null;
         $logCounts = null;
         if ($user->isAdmin()) {
-            $logQuery = NotificationLog::orderByDesc('created_at');
+            try {
+                $logQuery = NotificationLog::orderByDesc('created_at');
 
-            if ($filter === 'unread') {
-                $logQuery->where('status', 'failed');
-            } elseif ($filter === 'read') {
-                $logQuery->where('status', 'sent');
+                if ($filter === 'unread') {
+                    $logQuery->where('status', 'failed');
+                } elseif ($filter === 'read') {
+                    $logQuery->where('status', 'sent');
+                }
+
+                $emailLogs = $logQuery->paginate(30)->withQueryString();
+                $logCounts = [
+                    'total'   => NotificationLog::count(),
+                    'sent'    => NotificationLog::where('status', 'sent')->count(),
+                    'failed'  => NotificationLog::where('status', 'failed')->count(),
+                    'pending' => NotificationLog::where('status', 'pending')->count(),
+                ];
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('NotificationController email logs failed: ' . $e->getMessage());
             }
-
-            $emailLogs = $logQuery->paginate(30)->withQueryString();
-            $logCounts = [
-                'total'   => NotificationLog::count(),
-                'sent'    => NotificationLog::where('status', 'sent')->count(),
-                'failed'  => NotificationLog::where('status', 'failed')->count(),
-                'pending' => NotificationLog::where('status', 'pending')->count(),
-            ];
         }
 
         return Inertia::render('Notifications/Index', [
@@ -140,28 +149,28 @@ class NotificationController extends Controller
             $notifs = $user->notifications()->latest()->limit(200)->get();
 
             $notifs->each(function ($notification) use ($items, $user) {
-                $data  = $notification->data;
-                $type  = $notification->type;
-                $label = self::TYPE_LABELS[$type] ?? 'Notification';
-                $read  = !is_null($notification->read_at);
+                try {
+                    $data  = $notification->data;
+                    $type  = $notification->type;
+                    $label = self::TYPE_LABELS[$type] ?? 'Notification';
+                    $read  = !is_null($notification->read_at);
+                    $desc  = $this->buildDescription($type, $data);
+                    $groupKey = $label . '_' . ($data['appointment_id'] ?? $data['event'] ?? $type);
 
-                // Build description based on type
-                $desc = $this->buildDescription($type, $data);
-
-                // group_key: same type + same appointment_id or same source
-                $groupKey = $label . '_' . ($data['appointment_id'] ?? $data['event'] ?? $type);
-
-                $items->push([
-                    'id'          => $notification->id,
-                    'type'        => $label,
-                    'group_key'   => $groupKey,
-                    'title'       => $desc['title'],
-                    'description' => $desc['description'],
-                    'created_at'  => $notification->created_at,
-                    'href'        => $this->buildHref($type, $data),
-                    'read'        => $read,
-                    'raw_type'    => $type,
-                ]);
+                    $items->push([
+                        'id'          => $notification->id,
+                        'type'        => $label,
+                        'group_key'   => $groupKey,
+                        'title'       => $desc['title'],
+                        'description' => $desc['description'],
+                        'created_at'  => $notification->created_at,
+                        'href'        => $this->buildHref($type, $data),
+                        'read'        => $read,
+                        'raw_type'    => $type,
+                    ]);
+                } catch (\Throwable $e) {
+                    // Skip bad notifications silently
+                }
             });
         }
 
@@ -195,25 +204,28 @@ class NotificationController extends Controller
             // In-app DB notifications (registrations etc.)
             $adminNotifs = $user->notifications()->latest()->limit(200)->get();
             $adminNotifs->each(function ($notification) use ($items) {
-                $data  = $notification->data;
-                $type  = $notification->type;
-                $label = self::TYPE_LABELS[$type] ?? 'Notification';
-                $read  = !is_null($notification->read_at);
-                $desc  = $this->buildDescription($type, $data);
+                try {
+                    $data  = $notification->data;
+                    $type  = $notification->type;
+                    $label = self::TYPE_LABELS[$type] ?? 'Notification';
+                    $read  = !is_null($notification->read_at);
+                    $desc  = $this->buildDescription($type, $data);
+                    $groupKey = $label . '_' . ($data['appointment_id'] ?? $data['event'] ?? $data['email'] ?? $type);
 
-                $groupKey = $label . '_' . ($data['appointment_id'] ?? $data['event'] ?? $data['email'] ?? $type);
-
-                $items->push([
-                    'id'          => $notification->id,
-                    'type'        => $label,
-                    'group_key'   => $groupKey,
-                    'title'       => $desc['title'],
-                    'description' => $desc['description'],
-                    'created_at'  => $notification->created_at,
-                    'href'        => $this->buildHref($type, $data),
-                    'read'        => $read,
-                    'raw_type'    => $type,
-                ]);
+                    $items->push([
+                        'id'          => $notification->id,
+                        'type'        => $label,
+                        'group_key'   => $groupKey,
+                        'title'       => $desc['title'],
+                        'description' => $desc['description'],
+                        'created_at'  => $notification->created_at,
+                        'href'        => $this->buildHref($type, $data),
+                        'read'        => $read,
+                        'raw_type'    => $type,
+                    ]);
+                } catch (\Throwable $e) {
+                    // Skip bad notifications silently
+                }
             });
 
             // Pending appointments
