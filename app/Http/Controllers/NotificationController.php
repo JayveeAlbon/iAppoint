@@ -100,21 +100,24 @@ class NotificationController extends Controller
         $logCounts = null;
         if ($user->isAdmin()) {
             try {
-                $logQuery = NotificationLog::orderByDesc('created_at');
+                // Check table exists before querying
+                if (\Illuminate\Support\Facades\Schema::hasTable('notification_logs')) {
+                    $logQuery = NotificationLog::orderByDesc('created_at');
 
-                if ($filter === 'unread') {
-                    $logQuery->where('status', 'failed');
-                } elseif ($filter === 'read') {
-                    $logQuery->where('status', 'sent');
+                    if ($filter === 'unread') {
+                        $logQuery->where('status', 'failed');
+                    } elseif ($filter === 'read') {
+                        $logQuery->where('status', 'sent');
+                    }
+
+                    $emailLogs = $logQuery->paginate(30)->withQueryString();
+                    $logCounts = [
+                        'total'   => NotificationLog::count(),
+                        'sent'    => NotificationLog::where('status', 'sent')->count(),
+                        'failed'  => NotificationLog::where('status', 'failed')->count(),
+                        'pending' => NotificationLog::where('status', 'pending')->count(),
+                    ];
                 }
-
-                $emailLogs = $logQuery->paginate(30)->withQueryString();
-                $logCounts = [
-                    'total'   => NotificationLog::count(),
-                    'sent'    => NotificationLog::where('status', 'sent')->count(),
-                    'failed'  => NotificationLog::where('status', 'failed')->count(),
-                    'pending' => NotificationLog::where('status', 'pending')->count(),
-                ];
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::error('NotificationController email logs failed: ' . $e->getMessage());
             }
