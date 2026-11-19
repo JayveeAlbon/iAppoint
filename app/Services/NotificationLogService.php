@@ -44,9 +44,10 @@ class NotificationLogService
             'status'           => 'pending',
         ]);
 
-        // Attempt sending
+        // Attempt sending — use sendNow() to bypass queue deduplication
+        // so the same notification type can be sent multiple times to the same user
         try {
-            $recipient->notify($notification);
+            \Illuminate\Support\Facades\Notification::sendNow([$recipient], $notification);
 
             $log->update([
                 'status'  => 'sent',
@@ -91,7 +92,7 @@ class NotificationLogService
         $log->update(['status' => 'pending', 'error_message' => null]);
 
         try {
-            $recipient->notify($notification);
+            \Illuminate\Support\Facades\Notification::sendNow([$recipient], $notification);
 
             $log->update([
                 'status'  => 'sent',

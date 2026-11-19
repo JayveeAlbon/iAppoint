@@ -142,26 +142,43 @@ class AppointmentController extends Controller
         $appointment = Appointment::create($data);
         $appointment->loadMissing(['faculty']);
 
-        // ── Notify admins ─────────────────────────────────────────────────────
-        $this->notifyAdmins($appointment);
+        // Send all notifications AFTER response is returned to avoid blocking
+        $logger = $this->logger;
+        register_shutdown_function(function () use ($appointment, $logger) {
+            // ── Notify admins ─────────────────────────────────────────────────
+            try {
+                $recipients = User::where('role', 'admin')
+                    ->where('status', 'active')
+                    ->whereNotNull('email')
+                    ->get();
 
-        // ── Notify faculty (in-app first, then logged email) ─────────────────
-        if ($appointment->faculty) {
-            // In-app (database channel — not logged, always fires)
-            $appointment->faculty->notify(
-                new AppointmentRequestedForFacultyNotification($appointment, ['database'])
-            );
+                $notification = new AppointmentRequestedNotification($appointment);
 
-            // Email (logged)
-            if ($appointment->faculty->email) {
-                $this->logger->send(
-                    $appointment->faculty,
-                    new AppointmentRequestedForFacultyNotification($appointment, ['mail']),
-                    'appointment.requested.faculty',
-                    $appointment,
-                );
+                foreach ($recipients as $admin) {
+                    if ($admin->email) {
+                        $logger->send($admin, $notification, 'appointment.requested', $appointment);
+                    }
+                }
+            } catch (\Throwable $e) {
+                Log::warning('Admin notification failed: ' . $e->getMessage());
             }
-        }
+
+            // ── Notify faculty ─────────────────────────────────────────────────
+            if ($appointment->faculty) {
+                $appointment->faculty->notify(
+                    new AppointmentRequestedForFacultyNotification($appointment, ['database'])
+                );
+
+                if ($appointment->faculty->email) {
+                    $logger->send(
+                        $appointment->faculty,
+                        new AppointmentRequestedForFacultyNotification($appointment, ['mail']),
+                        'appointment.requested.faculty',
+                        $appointment,
+                    );
+                }
+            }
+        });
 
         return back()->with('success', 'Appointment request submitted. Awaiting admin approval.');
     }
