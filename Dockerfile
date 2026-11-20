@@ -1,17 +1,4 @@
-﻿# ─────────────────────────────────────────────────────────────────────────────
-# Stage 1 — Build frontend assets
-# ─────────────────────────────────────────────────────────────────────────────
-FROM node:20-alpine AS frontend
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Stage 2 — PHP application
-# ─────────────────────────────────────────────────────────────────────────────
-FROM php:8.2-fpm-alpine AS app
+﻿FROM php:8.2-fpm-alpine
 
 RUN apk add --no-cache \
     nginx supervisor curl \
@@ -31,9 +18,7 @@ COPY composer.json composer.lock ./
 RUN composer install --no-dev --no-scripts --optimize-autoloader --no-interaction
 
 COPY . .
-COPY --from=frontend /app/public/build ./public/build
 
-# PHP-FPM config — more workers
 RUN printf '[www]\npm = dynamic\npm.max_children = 20\npm.start_servers = 3\npm.min_spare_servers = 2\npm.max_spare_servers = 10\nrequest_terminate_timeout = 300\n' \
     > /usr/local/etc/php-fpm.d/zzz-custom.conf
 
