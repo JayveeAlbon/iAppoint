@@ -1,4 +1,17 @@
-﻿FROM php:8.2-fpm-alpine AS app
+﻿# ─────────────────────────────────────────────────────────────────────────────
+# Stage 1 — Build frontend assets
+# ─────────────────────────────────────────────────────────────────────────────
+FROM node:20-alpine AS frontend
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+COPY . .
+RUN npm run build
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Stage 2 — PHP application
+# ─────────────────────────────────────────────────────────────────────────────
+FROM php:8.2-fpm-alpine AS app
 
 RUN apk add --no-cache \
     nginx supervisor curl \
@@ -17,16 +30,16 @@ WORKDIR /var/www/html
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --no-scripts --optimize-autoloader --no-interaction
 
-# Copy all source (includes pre-built public/build/ and bootstrap/cache/services.php)
 COPY . .
+COPY --from=frontend /app/public/build ./public/build
 
-# Permissions
+# PHP-FPM config — more workers
+RUN printf '[www]\npm = dynamic\npm.max_children = 20\npm.start_servers = 3\npm.min_spare_servers = 2\npm.max_spare_servers = 10\nrequest_terminate_timeout = 300\n' \
+    > /usr/local/etc/php-fpm.d/zzz-custom.conf
+
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
     && chmod -R 755 /var/www/html/bootstrap/cache
-
-# PHP-FPM config — more workers to handle concurrent requests
-RUN printf '[www]\nrequest_terminate_timeout = 300\npm = dynamic\npm.max_children = 20\npm.start_servers = 2\npm.min_spare_servers = 2\npm.max_spare_servers = 5\npm.max_requests = 500\n' > /usr/local/etc/php-fpm.d/zzz-custom.conf
 
 COPY docker/nginx.conf /etc/nginx/http.d/default.conf
 COPY docker/supervisord.conf /etc/supervisord.conf
