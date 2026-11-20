@@ -14,6 +14,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // Trust all proxies — required for Railway, Render, and other PaaS platforms
         $middleware->trustProxies(at: '*');
 
+        // Reconnect DB before every request (handles MySQL server has gone away)
+        $middleware->prepend(\App\Http\Middleware\ReconnectDatabase::class);
+
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
