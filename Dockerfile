@@ -14,13 +14,13 @@ RUN npm run build
 FROM php:8.2-fpm-alpine AS app
 
 RUN apk add --no-cache \
-    nginx supervisor curl \
+    nginx supervisor curl sqlite \
     libpng-dev libzip-dev zip unzip \
     oniguruma-dev icu-dev postgresql-dev \
     mysql-client bash
 
 RUN docker-php-ext-install \
-    pdo pdo_mysql pdo_pgsql pgsql \
+    pdo pdo_mysql pdo_pgsql pgsql pdo_sqlite \
     mbstring zip gd bcmath intl
 
 COPY --from=composer:2.8 /usr/bin/composer /usr/bin/composer
@@ -29,11 +29,21 @@ WORKDIR /var/www/html
 
 COPY composer.json composer.lock ./
 
-# Install prod deps — no scripts (avoids artisan calls that need DB/APP_KEY)
-RUN composer install --no-dev --no-scripts --optimize-autoloader --no-interaction
+# Install ALL packages (including dev) to get correct services.php
+RUN composer install --no-scripts --no-autoloader --no-interaction
 
+# Copy source
 COPY . .
 COPY --from=frontend /app/public/build ./public/build
+
+# Generate autoloader + run package:discover using SQLite (no MySQL needed)
+RUN cp .env.example .env \
+    && php artisan key:generate --force \
+    && composer dump-autoload --optimize --no-interaction \
+    && rm .env
+
+# Remove dev packages after services.php is generated
+RUN composer install --no-dev --no-scripts --optimize-autoloader --no-interaction
 
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
