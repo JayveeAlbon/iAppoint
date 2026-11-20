@@ -15,9 +15,11 @@ COPY --from=composer:2.8 /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-scripts --optimize-autoloader --no-interaction
+RUN composer install --no-dev --no-scripts --no-autoloader --no-interaction
 
 COPY . .
+
+RUN composer dump-autoload --no-scripts --no-interaction
 
 RUN printf '[www]\npm = dynamic\npm.max_children = 20\npm.start_servers = 3\npm.min_spare_servers = 2\npm.max_spare_servers = 10\nrequest_terminate_timeout = 300\n' \
     > /usr/local/etc/php-fpm.d/zzz-custom.conf
