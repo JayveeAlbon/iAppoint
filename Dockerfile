@@ -15,7 +15,7 @@ COPY --from=composer:2.8 /usr/bin/composer /usr/bin/composer
 WORKDIR /var/www/html
 
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-scripts --no-autoloader --no-interaction
+RUN composer install --no-scripts --no-autoloader --no-interaction
 
 COPY . .
 
