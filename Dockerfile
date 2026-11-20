@@ -1,20 +1,7 @@
-﻿# ─────────────────────────────────────────────────────────────────────────────
-# Stage 1 — Build frontend assets
-# ─────────────────────────────────────────────────────────────────────────────
-FROM node:20-alpine AS frontend
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
-COPY . .
-RUN npm run build
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Stage 2 — PHP application
-# ─────────────────────────────────────────────────────────────────────────────
-FROM php:8.2-fpm-alpine AS app
+﻿FROM php:8.2-fpm-alpine AS app
 
 RUN apk add --no-cache \
-    nginx supervisor curl \
+    nginx supervisor curl nodejs npm \
     libpng-dev libzip-dev zip unzip \
     oniguruma-dev icu-dev postgresql-dev \
     mysql-client bash
@@ -27,20 +14,21 @@ COPY --from=composer:2.8 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-COPY composer.json composer.lock ./
+# Copy everything
+COPY . .
 
-# Install production deps only — no scripts, no artisan calls
+# Install PHP deps (no dev, no scripts, no artisan)
 RUN composer install --no-dev --no-scripts --optimize-autoloader --no-interaction
 
-# Copy all source (includes pre-generated bootstrap/cache/services.php)
-COPY . .
-COPY --from=frontend /app/public/build ./public/build
+# Build frontend assets
+RUN npm ci && npm run build && rm -rf node_modules
 
+# Permissions
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
     && chmod -R 755 /var/www/html/bootstrap/cache
 
-# PHP-FPM config — increase timeouts, prevent crashes
+# PHP-FPM config
 RUN echo '[www]' > /usr/local/etc/php-fpm.d/zzz-custom.conf \
     && echo 'request_terminate_timeout = 300' >> /usr/local/etc/php-fpm.d/zzz-custom.conf \
     && echo 'pm = dynamic' >> /usr/local/etc/php-fpm.d/zzz-custom.conf \
