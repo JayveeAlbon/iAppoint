@@ -40,6 +40,15 @@ RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
     && chmod -R 755 /var/www/html/bootstrap/cache
 
+# PHP-FPM config — increase timeouts, prevent crashes
+RUN echo '[www]' > /usr/local/etc/php-fpm.d/zzz-custom.conf \
+    && echo 'request_terminate_timeout = 300' >> /usr/local/etc/php-fpm.d/zzz-custom.conf \
+    && echo 'pm = dynamic' >> /usr/local/etc/php-fpm.d/zzz-custom.conf \
+    && echo 'pm.max_children = 5' >> /usr/local/etc/php-fpm.d/zzz-custom.conf \
+    && echo 'pm.start_servers = 1' >> /usr/local/etc/php-fpm.d/zzz-custom.conf \
+    && echo 'pm.min_spare_servers = 1' >> /usr/local/etc/php-fpm.d/zzz-custom.conf \
+    && echo 'pm.max_spare_servers = 2' >> /usr/local/etc/php-fpm.d/zzz-custom.conf
+
 COPY docker/nginx.conf /etc/nginx/http.d/default.conf
 COPY docker/supervisord.conf /etc/supervisord.conf
 COPY docker/start.sh /start.sh
