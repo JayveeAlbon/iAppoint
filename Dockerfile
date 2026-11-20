@@ -1,7 +1,7 @@
 ﻿FROM php:8.2-fpm-alpine AS app
 
 RUN apk add --no-cache \
-    nginx supervisor curl nodejs npm \
+    nginx supervisor curl \
     libpng-dev libzip-dev zip unzip \
     oniguruma-dev icu-dev postgresql-dev \
     mysql-client bash
@@ -14,14 +14,11 @@ COPY --from=composer:2.8 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Copy everything
-COPY . .
-
-# Install PHP deps (no dev, no scripts, no artisan)
+COPY composer.json composer.lock ./
 RUN composer install --no-dev --no-scripts --optimize-autoloader --no-interaction
 
-# Build frontend assets
-RUN npm ci && npm run build && rm -rf node_modules
+# Copy all source (includes pre-built public/build/ and bootstrap/cache/services.php)
+COPY . .
 
 # Permissions
 RUN chown -R www-data:www-data /var/www/html \
@@ -29,13 +26,7 @@ RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/bootstrap/cache
 
 # PHP-FPM config
-RUN echo '[www]' > /usr/local/etc/php-fpm.d/zzz-custom.conf \
-    && echo 'request_terminate_timeout = 300' >> /usr/local/etc/php-fpm.d/zzz-custom.conf \
-    && echo 'pm = dynamic' >> /usr/local/etc/php-fpm.d/zzz-custom.conf \
-    && echo 'pm.max_children = 5' >> /usr/local/etc/php-fpm.d/zzz-custom.conf \
-    && echo 'pm.start_servers = 1' >> /usr/local/etc/php-fpm.d/zzz-custom.conf \
-    && echo 'pm.min_spare_servers = 1' >> /usr/local/etc/php-fpm.d/zzz-custom.conf \
-    && echo 'pm.max_spare_servers = 2' >> /usr/local/etc/php-fpm.d/zzz-custom.conf
+RUN printf '[www]\nrequest_terminate_timeout = 300\npm = dynamic\npm.max_children = 5\npm.start_servers = 1\npm.min_spare_servers = 1\npm.max_spare_servers = 2\n' > /usr/local/etc/php-fpm.d/zzz-custom.conf
 
 COPY docker/nginx.conf /etc/nginx/http.d/default.conf
 COPY docker/supervisord.conf /etc/supervisord.conf
