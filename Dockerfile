@@ -39,8 +39,9 @@ COPY --from=frontend /app/public/build ./public/build
 # Generate autoloader + run package:discover using SQLite (no MySQL needed)
 RUN cp .env.example .env \
     && php artisan key:generate --force \
+    && touch database/database.sqlite \
     && composer dump-autoload --optimize --no-interaction \
-    && rm .env
+    && rm .env database/database.sqlite
 
 # Remove dev packages after services.php is generated
 RUN composer install --no-dev --no-scripts --optimize-autoloader --no-interaction
