@@ -25,8 +25,8 @@ RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
     && chmod -R 755 /var/www/html/bootstrap/cache
 
-# PHP-FPM config
-RUN printf '[www]\nrequest_terminate_timeout = 300\npm = dynamic\npm.max_children = 5\npm.start_servers = 1\npm.min_spare_servers = 1\npm.max_spare_servers = 2\n' > /usr/local/etc/php-fpm.d/zzz-custom.conf
+# PHP-FPM config — more workers to handle concurrent requests
+RUN printf '[www]\nrequest_terminate_timeout = 300\npm = dynamic\npm.max_children = 20\npm.start_servers = 2\npm.min_spare_servers = 2\npm.max_spare_servers = 5\npm.max_requests = 500\n' > /usr/local/etc/php-fpm.d/zzz-custom.conf
 
 COPY docker/nginx.conf /etc/nginx/http.d/default.conf
 COPY docker/supervisord.conf /etc/supervisord.conf
