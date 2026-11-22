@@ -21,8 +21,9 @@ COPY . .
 
 RUN composer dump-autoload --no-scripts --no-interaction
 
-RUN printf '[global]\nerror_log = /dev/stderr\n\n[www]\nlisten = /var/run/php-fpm.sock\nlisten.owner = www-data\nlisten.group = www-data\nlisten.mode = 0660\npm = dynamic\npm.max_children = 20\npm.start_servers = 3\npm.min_spare_servers = 2\npm.max_spare_servers = 10\nrequest_terminate_timeout = 300\ncatch_workers_output = yes\n' \
-    > /usr/local/etc/php-fpm.d/zzz-custom.conf
+RUN printf '[global]\nerror_log = /dev/stderr\n\n[www]\nlisten = /var/run/php-fpm.sock\nlisten.owner = nobody\nlisten.group = nobody\nlisten.mode = 0660\npm = dynamic\npm.max_children = 20\npm.start_servers = 3\npm.min_spare_servers = 2\npm.max_spare_servers = 10\nrequest_terminate_timeout = 300\ncatch_workers_output = yes\n' \
+    > /usr/local/etc/php-fpm.d/www.conf \
+    && rm -f /usr/local/etc/php-fpm.d/zzz-custom.conf /usr/local/etc/php-fpm.d/docker.conf /usr/local/etc/php-fpm.d/zz-docker.conf
 
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
