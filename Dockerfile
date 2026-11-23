@@ -10,16 +10,10 @@ RUN docker-php-ext-install \
     pdo pdo_mysql pdo_pgsql pgsql \
     mbstring zip gd bcmath intl
 
-COPY --from=composer:2.8 /usr/bin/composer /usr/bin/composer
-
 WORKDIR /var/www/html
 
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --no-scripts --no-autoloader --no-interaction
-
+# Copy everything including vendor/ and public/build/
 COPY . .
-
-RUN composer dump-autoload --no-scripts --no-interaction
 
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
