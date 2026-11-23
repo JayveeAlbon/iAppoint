@@ -21,9 +21,6 @@ COPY . .
 
 RUN composer dump-autoload --no-scripts --no-interaction
 
-RUN printf '[global]\nerror_log = /dev/stderr\n' \
-    > /usr/local/etc/php-fpm.d/zzz-custom.conf
-
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
     && chmod -R 755 /var/www/html/bootstrap/cache
