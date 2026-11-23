@@ -42,7 +42,7 @@ services:
           name: iappoint-db
           property: password
       - key: SESSION_DRIVER
-        value: database
+        value: file
       - key: QUEUE_CONNECTION
         value: database
       - key: CACHE_STORE
