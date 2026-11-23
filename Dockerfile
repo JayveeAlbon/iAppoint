@@ -21,7 +21,7 @@ COPY . .
 
 RUN composer dump-autoload --no-scripts --no-interaction
 
-RUN printf '[global]\nerror_log = /dev/stderr\n\n[www]\npm = dynamic\npm.max_children = 20\npm.start_servers = 3\npm.min_spare_servers = 2\npm.max_spare_servers = 10\nrequest_terminate_timeout = 300\ncatch_workers_output = yes\n' \
+RUN printf '[global]\nerror_log = /dev/stderr\n' \
     > /usr/local/etc/php-fpm.d/zzz-custom.conf
 
 RUN chown -R www-data:www-data /var/www/html \
