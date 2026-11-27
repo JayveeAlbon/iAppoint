@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('messages', function (Blueprint $table) {
-            $table->string('attachment')->nullable()->after('body');
-            $table->string('attachment_name')->nullable()->after('attachment');
+            $table->string('attachment')->nullable();
+            $table->string('attachment_name')->nullable();
         });
     }
 

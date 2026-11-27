@@ -11,7 +11,7 @@ services:
       - key: APP_ENV
         value: production
       - key: APP_DEBUG
-        value: true
+        value: false
       - key: APP_KEY
         generateValue: true
       - key: APP_URL
@@ -20,7 +20,7 @@ services:
           name: iappoint
           property: host
       - key: DB_CONNECTION
-        value: mysql
+        value: pgsql
       - key: DB_HOST
         fromDatabase:
           name: iappoint-db
@@ -44,9 +44,9 @@ services:
       - key: SESSION_DRIVER
         value: file
       - key: QUEUE_CONNECTION
-        value: database
+        value: sync
       - key: CACHE_STORE
-        value: database
+        value: file
       - key: LOG_CHANNEL
         value: stderr
       - key: MAIL_MAILER

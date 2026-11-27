@@ -10,16 +10,16 @@ return new class extends Migration
     {
         Schema::table('user_feedbacks', function (Blueprint $table) {
             if (!Schema::hasColumn('user_feedbacks', 'feedback_tab')) {
-                $table->string('feedback_tab', 20)->default('system')->after('category');
+                $table->string('feedback_tab', 20)->default('system');
             }
             if (!Schema::hasColumn('user_feedbacks', 'priority')) {
-                $table->string('priority', 20)->default('medium')->after('feedback_tab');
+                $table->string('priority', 20)->default('medium');
             }
             if (!Schema::hasColumn('user_feedbacks', 'suggestions')) {
-                $table->text('suggestions')->nullable()->after('message');
+                $table->text('suggestions')->nullable();
             }
             if (!Schema::hasColumn('user_feedbacks', 'document_path')) {
-                $table->string('document_path', 500)->nullable()->after('screenshot_path');
+                $table->string('document_path', 500)->nullable();
             }
         });
     }

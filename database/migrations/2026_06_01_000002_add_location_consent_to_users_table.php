@@ -9,7 +9,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->timestamp('location_consent_at')->nullable()->after('longitude');
+            $table->timestamp('location_consent_at')->nullable();
         });
     }
 

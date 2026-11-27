@@ -9,15 +9,15 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->enum('role', ['student', 'faculty', 'admin'])->default('student')->after('email');
-            $table->string('student_id')->nullable()->unique()->after('role');
-            $table->string('course')->nullable()->after('student_id');
-            $table->string('year_level')->nullable()->after('course');
-            $table->string('employee_id')->nullable()->unique()->after('year_level');
-            $table->string('department')->nullable()->after('employee_id');
-            $table->string('office_location')->nullable()->after('department');
-            $table->decimal('latitude', 10, 8)->nullable()->after('office_location');
-            $table->decimal('longitude', 11, 8)->nullable()->after('latitude');
+            $table->enum('role', ['student', 'faculty', 'admin'])->default('student');
+            $table->string('student_id')->nullable()->unique();
+            $table->string('course')->nullable();
+            $table->string('year_level')->nullable();
+            $table->string('employee_id')->nullable()->unique();
+            $table->string('department')->nullable();
+            $table->string('office_location')->nullable();
+            $table->decimal('latitude', 10, 8)->nullable();
+            $table->decimal('longitude', 11, 8)->nullable();
         });
     }
 

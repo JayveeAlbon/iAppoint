@@ -11,7 +11,7 @@ return new class extends Migration
         Schema::table('users', function (Blueprint $table) {
             // Allows an admin account to also act as a faculty member
             // for appointment scheduling without changing their role.
-            $table->boolean('is_also_faculty')->default(false)->after('status');
+            $table->boolean('is_also_faculty')->default(false);
         });
     }
 
