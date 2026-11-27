@@ -11,13 +11,14 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Trust all proxies — required for Railway, Render, and other PaaS platforms
         $middleware->trustProxies(at: '*');
+
+        // Reconnect DB before every request including session queries
+        $middleware->prepend(\App\Http\Middleware\ReconnectDatabase::class);
 
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
-            \App\Http\Middleware\ReconnectDatabase::class,
         ]);
 
         $middleware->alias([
