@@ -6,8 +6,9 @@ use App\Http\Requests\CreateConversationRequest;
 use App\Http\Requests\SendMessageRequest;
 use App\Models\Conversation;
 use App\Models\User;
+use App\Notifications\NewMessageNotification;
 use App\Services\ConversationService;
-use App\Services\FriendshipService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -18,9 +19,12 @@ class ConversationController extends Controller
 {
     public function __construct(
         private readonly ConversationService $conversations,
-        private readonly FriendshipService   $friendships,
     ) {}
 
+    /**
+     * Conversation list — no longer needs the friends list; the
+     * user-picker modal fetches users via searchUsers() instead.
+     */
     public function index(Request $request): Response
     {
         $user  = $request->user();
@@ -28,8 +32,37 @@ class ConversationController extends Controller
 
         return Inertia::render('Messages/Index', [
             'conversations' => $convs,
-            'friends'       => $this->friendships->getFriends($user)->values(),
         ]);
+    }
+
+    /**
+     * JSON search endpoint for the new-chat user picker.
+     * Returns active users (excluding the caller) whose name or email
+     * contains the given query string.
+     */
+    public function searchUsers(Request $request): JsonResponse
+    {
+        $q    = trim($request->get('q', ''));
+        $user = $request->user();
+
+        $users = User::where('id', '!=', $user->id)
+            ->where('status', 'active')
+            ->when($q !== '', function ($query) use ($q) {
+                $query->where(function ($inner) use ($q) {
+                    $inner->where('name', 'ilike', "%{$q}%")
+                          ->orWhere('email', 'ilike', "%{$q}%");
+                });
+            })
+            ->orderBy('name')
+            ->limit(20)
+            ->get(['id', 'name', 'email', 'role', 'department', 'avatar']);
+
+        // Append avatar_url for each user
+        $users->each(function ($u) {
+            $u->avatar_url = $u->avatar ? asset(ltrim($u->avatar, '/')) : null;
+        });
+
+        return response()->json($users);
     }
 
     public function store(CreateConversationRequest $request): RedirectResponse
@@ -60,7 +93,18 @@ class ConversationController extends Controller
 
         $this->conversations->markRead($conversation, $user);
 
-        $conversation->load('participants:id,name,role,department');
+        // Mark any NewMessageNotification records for this conversation as read
+        $user->unreadNotifications()
+            ->where('type', NewMessageNotification::class)
+            ->whereJsonContains('data->conversation_id', $conversation->id)
+            ->update(['read_at' => now()]);
+
+        $conversation->load('participants:id,name,role,department,avatar');
+
+        // Append avatar_url to each participant
+        $conversation->participants->each(function ($p) {
+            $p->avatar_url = $p->avatar ? asset(ltrim($p->avatar, '/')) : null;
+        });
 
         return Inertia::render('Messages/Show', [
             'conversation' => $conversation,
@@ -73,12 +117,12 @@ class ConversationController extends Controller
     {
         $this->authorize('sendMessage', $conversation);
 
-        $attachment = null;
+        $attachment     = null;
         $attachmentName = null;
 
         if ($request->hasFile('attachment')) {
-            $file = $request->file('attachment');
-            $attachment = $file->store('attachments', 'public');
+            $file           = $request->file('attachment');
+            $attachment     = $file->store('attachments', 'public');
             $attachmentName = $file->getClientOriginalName();
         }
 

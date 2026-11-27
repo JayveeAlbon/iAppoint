@@ -10,6 +10,7 @@ use App\Notifications\AppointmentApprovedForFacultyNotification;
 use App\Notifications\AppointmentApprovedForStudentNotification;
 use App\Notifications\AppointmentReminderNotification;
 use App\Notifications\AppointmentRescheduledNotification;
+use App\Notifications\NewMessageNotification;
 use App\Notifications\UserRegisteredInAppNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;

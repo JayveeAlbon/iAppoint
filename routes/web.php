@@ -73,6 +73,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     // ── Conversations / Messages ──────────────────────────────────────────────
     Route::get('/messages', [ConversationController::class, 'index'])->name('messages.index');
     Route::post('/messages', [ConversationController::class, 'store'])->name('messages.store');
+    Route::get('/messages/users/search', [ConversationController::class, 'searchUsers'])->name('messages.users.search');
     Route::get('/messages/{conversation}', [ConversationController::class, 'show'])->name('messages.show');
     Route::post('/messages/{conversation}/send', [ConversationController::class, 'sendMessage'])->name('messages.send');
 

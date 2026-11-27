@@ -16,6 +16,7 @@ use App\Notifications\AppointmentRequestedForFacultyNotification;
 use App\Notifications\AppointmentRescheduledNotification;
 use App\Notifications\AppointmentRescheduledByFacultyNotification;
 use App\Notifications\AppointmentCancelledNotification;
+use App\Notifications\NewMessageNotification;
 use App\Notifications\UserRegisteredInAppNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -41,6 +42,7 @@ class NotificationController extends Controller
         AppointmentInviteResponseNotification::class      => 'Invitation Response',
         AppointmentCancelledNotification::class           => 'Appointment Cancelled',
         UserRegisteredInAppNotification::class            => 'New Registration',
+        NewMessageNotification::class                     => 'New Message',
     ];
 
     public function index(Request $request): Response
@@ -373,6 +375,10 @@ class NotificationController extends Controller
                     ucfirst($data['role'] ?? 'user'),
                 ),
             ],
+            $type === NewMessageNotification::class => [
+                'title'       => 'New message from ' . ($data['sender_name'] ?? 'someone'),
+                'description' => $data['snippet'] ?? 'You have a new message.',
+            ],
             default => [
                 'title'       => 'Notification',
                 'description' => json_encode($data),
@@ -387,6 +393,10 @@ class NotificationController extends Controller
                 => route('admin.appointments.index'),
             str_contains($type, 'Registered')
                 => route('admin.users.index'),
+            $type === NewMessageNotification::class
+                => isset($data['conversation_id'])
+                    ? route('messages.show', $data['conversation_id'])
+                    : route('messages.index'),
             str_contains($type, 'Appointment')
                 => route('appointments.index'),
             default

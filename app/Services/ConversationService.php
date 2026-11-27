@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\User;
+use App\Notifications\NewMessageNotification;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -94,7 +95,17 @@ class ConversationService
 
         $this->markRead($conversation, $sender);
 
-        return $message->load('sender:id,name,role');
+        $message->load('sender:id,name,role');
+
+        // Notify all other participants (database channel only, no email)
+        $conversation->loadMissing('participants');
+        $conversation->participants
+            ->where('id', '!=', $sender->id)
+            ->each(fn(User $participant) =>
+                $participant->notify(new NewMessageNotification($message, $conversation, $sender))
+            );
+
+        return $message;
     }
 
     public function markRead(Conversation $conversation, User $user): void
