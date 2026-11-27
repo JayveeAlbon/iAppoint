@@ -11,11 +11,15 @@ class ReconnectDatabase
 {
     public function handle(Request $request, Closure $next): Response
     {
-        // Reconnect DB if connection was dropped (MySQL server has gone away)
+        // Purge and reconnect to get a fresh PDO connection every request.
+        // On Render free tier, MySQL connections go stale during cold starts.
+        // DB::purge() destroys the stale PDO object; DB::reconnect() opens a new one.
         try {
+            DB::purge();
             DB::reconnect();
         } catch (\Throwable $e) {
-            // Ignore reconnect errors — let the request proceed and fail naturally
+            // If reconnect fails here, the request will fail with a proper DB error
+            // rather than hanging indefinitely.
         }
 
         return $next($request);

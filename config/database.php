@@ -63,6 +63,7 @@ return [
                 (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
                 PDO::ATTR_PERSISTENT => false,
                 PDO::ATTR_TIMEOUT => 5,
+                PDO::MYSQL_ATTR_INIT_COMMAND => 'SET SESSION wait_timeout=28800, interactive_timeout=28800',
             ]) : [],
             'retry_after' => 0,
         ],
