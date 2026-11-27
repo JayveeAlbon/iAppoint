@@ -126,7 +126,7 @@ export default function Welcome({ laravelVersion, phpVersion }) {
 
     return (
         <>
-            <Head title="iAppoint — Southern Christian College" />
+            <Head title="iAppoint — Department of CCIS · Southern Christian College" />
 
             <div
                 className="relative min-h-screen bg-cover bg-center bg-no-repeat"
@@ -167,7 +167,7 @@ export default function Welcome({ laravelVersion, phpVersion }) {
                             <div className="text-white">
                                 <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-medium uppercase tracking-wider text-slate-100 backdrop-blur">
                                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                                    Campus appointment system
+                                    Department of CCIS Appointment System
                                 </span>
 
                                 <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
@@ -177,7 +177,7 @@ export default function Welcome({ laravelVersion, phpVersion }) {
                                 </h1>
 
                                 <p className="mt-5 max-w-md text-base text-slate-200/90">
-                                    iAppoint helps SCC students see who's on campus in real
+                                    iAppoint helps CCIS students find their faculty in real
                                     time, request consultations, and keep in touch — all from one
                                     place.
                                 </p>
@@ -315,7 +315,7 @@ export default function Welcome({ laravelVersion, phpVersion }) {
                                 </div>
 
                                 <p className="mt-5 text-center text-[11px] text-slate-300/80">
-                                    By continuing you agree to iAppoint's campus usage policy.
+                                    By continuing you agree to iAppoint's CCIS Department usage policy.
                                 </p>
                             </div>
                         </div>
